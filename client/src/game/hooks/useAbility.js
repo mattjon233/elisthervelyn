@@ -6,38 +6,36 @@ import soundService from '../../services/soundService';
 const characterAbilities = {
   esther: [
     {
-      id: 'arrow_shot',
-      name: 'Tiro de Flecha',
-      type: 'projectile',
-      damage: 35,
-      range: 20,
-      cooldown: 1000, // 1s
-      duration: 0,
+      id: 'light_burst',
+      name: 'Explosão de Luz',
+      type: 'melee_area_heal',
+      damage: 25,
+      heal: 25,
+      range: 4,
+      cooldown: 20000, // 20s
+      duration: 800,
     },
-    // Adicionar mais habilidades para Esther aqui
   ],
   elissa: [
     {
       id: 'blade_spin',
       name: 'Giro da Lâmina',
       type: 'melee_area',
-      damage: 25,
+      damage: 15,
       range: 3,
-      cooldown: 2000, // 2s
+      cooldown: 3000, // 3s
       duration: 400,
     },
   ],
   evelyn: [
     {
-      id: 'meteor_shower',
-      name: 'Chuva de Meteoros',
-      type: 'area_delayed',
-      damage: 40,
-      range: 10,
-      areaRadius: 4,
-      delay: 1500,
-      cooldown: 3000, // 3s
-      duration: 2500,
+      id: 'fire_storm',
+      name: 'Tempestade de Fogo',
+      type: 'melee_area',
+      damage: 50,
+      range: 3.5,
+      cooldown: 15000, // 15s
+      duration: 1000,
     },
   ],
 };
@@ -80,9 +78,9 @@ export function useAbility(character) {
 
       // 2. Dispara efeitos sonoros
       switch (ability.id) {
-        case 'arrow_shot': soundService.playArrowSound(); break;
+        case 'light_burst': soundService.playBladeSpinSound(); break;
         case 'blade_spin': soundService.playBladeSpinSound(); break;
-        case 'meteor_shower': soundService.playMeteorSound(); break;
+        case 'fire_storm': soundService.playMeteorSound(); break; // Som de fogo/explosão
         default: break;
       }
 

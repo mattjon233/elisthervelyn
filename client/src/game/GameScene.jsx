@@ -152,7 +152,31 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange 
             if (enemiesInRange.length > 0) {
               const enemyIds = enemiesInRange.map(e => e.id);
               enemyIds.forEach(id => hitSet.add(id)); // Marcar como atingido
-              socketService.sendAttack(enemyIds);
+              socketService.sendAttack(enemyIds, ability.damage);
+            }
+          }
+          break;
+        case 'melee_area_heal':
+          {
+            // Aplica dano em inimigos
+            const enemiesInRange = enemies.filter(enemy => {
+              if (hitSet.has(enemy.id)) return false;
+              const dx = enemy.position[0] - playerPos.x;
+              const dz = enemy.position[2] - playerPos.z;
+              const distance = Math.sqrt(dx * dx + dz * dz);
+              return distance <= ability.range;
+            });
+            if (enemiesInRange.length > 0) {
+              const enemyIds = enemiesInRange.map(e => e.id);
+              enemyIds.forEach(id => hitSet.add(id));
+              socketService.sendAttack(enemyIds, ability.damage);
+            }
+
+            // Aplica cura no jogador (apenas uma vez por habilidade)
+            if (!hitSet.has('heal_applied')) {
+              hitSet.add('heal_applied');
+              console.log(`💚 Explosão de Luz curou ${ability.heal} HP!`);
+              socketService.sendHeal(ability.heal);
             }
           }
           break;

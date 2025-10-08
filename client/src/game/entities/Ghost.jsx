@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import * as THREE from 'three';
+import { Text } from '@react-three/drei';
 
 /**
  * Componente Fantasma - Apenas visual, sem IA.
@@ -7,6 +8,7 @@ import * as THREE from 'three';
  */
 function Ghost({ id, position = [0, 0, 0], health = 20, maxHealth = 20 }) {
   const meshRef = useRef();
+  const healthPercent = Math.round((health / maxHealth) * 100);
 
   return (
     <group ref={meshRef} position={position}>
@@ -47,12 +49,40 @@ function Ghost({ id, position = [0, 0, 0], health = 20, maxHealth = 20 }) {
       {/* Aura fantasmagórica */}
       <pointLight color="#E6E6FA" intensity={0.5} distance={3} />
 
-      {/* Barra de vida */}
+      {/* Barra de vida melhorada com porcentagem */}
       {health > 0 && (
-        <mesh position={[0, 1, 0]}>
-          <planeGeometry args={[0.6 * (health / maxHealth), 0.1]} />
-          <meshBasicMaterial color="#00FFFF" side={THREE.DoubleSide} />
-        </mesh>
+        <group position={[0, 1.1, 0]}>
+          {/* Fundo preto da barra */}
+          <mesh position={[0, 0, -0.01]}>
+            <planeGeometry args={[1, 0.15]} />
+            <meshBasicMaterial color="#000000" side={THREE.DoubleSide} />
+          </mesh>
+
+          {/* Barra de HP ciano */}
+          <mesh position={[-(1 - (health / maxHealth)) / 2, 0, 0]}>
+            <planeGeometry args={[1 * (health / maxHealth), 0.12]} />
+            <meshBasicMaterial color="#00FFFF" side={THREE.DoubleSide} />
+          </mesh>
+
+          {/* Borda branca */}
+          <lineSegments>
+            <edgesGeometry attach="geometry" args={[new THREE.PlaneGeometry(1, 0.15)]} />
+            <lineBasicMaterial attach="material" color="#FFFFFF" linewidth={2} />
+          </lineSegments>
+
+          {/* Texto da porcentagem */}
+          <Text
+            position={[0, 0.25, 0]}
+            fontSize={0.15}
+            color="#FFFFFF"
+            anchorX="center"
+            anchorY="middle"
+            outlineWidth={0.02}
+            outlineColor="#000000"
+          >
+            {healthPercent}%
+          </Text>
+        </group>
       )}
     </group>
   );

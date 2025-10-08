@@ -44,10 +44,12 @@ io.on('connection', (socket) => {
   // Controles do jogo
   socket.on('player_move', (data) => gameController.handlePlayerMove(socket, data));
   socket.on('player_attack', (data) => gameController.handlePlayerAttack(socket, data));
-      socket.on('player_special', (data) => gameController.handlePlayerSpecial(socket, data));
-      socket.on('request_respawn', () => gameController.handlePlayerRespawn(socket));
-  
-      // Desconexão  socket.on('disconnect', () => gameController.handleDisconnect(socket));
+  socket.on('player_special', (data) => gameController.handlePlayerSpecial(socket, data));
+  socket.on('player_heal', (data) => gameController.handlePlayerHeal(socket, data));
+  socket.on('request_respawn', () => gameController.handlePlayerRespawn(socket));
+
+  // Desconexão
+  socket.on('disconnect', () => gameController.handleDisconnect(socket));
 });
 
 const PORT = process.env.PORT || 3001;

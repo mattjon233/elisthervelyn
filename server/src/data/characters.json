@@ -7,7 +7,7 @@
       "classe": "Arqueira",
       "cor_principal": "#FFB6D9",
       "stats": {
-        "vida_maxima": 100,
+        "vida_maxima": 80,
         "velocidade": 5.0,
         "estamina": 100
       },
@@ -45,7 +45,7 @@
       "classe": "Maga",
       "cor_principal": "#A8D8EA",
       "stats": {
-        "vida_maxima": 80,
+        "vida_maxima": 50,
         "velocidade": 4.5,
         "estamina": 150
       },

@@ -39,11 +39,11 @@ export class GameService {
   getInitialEnemies() {
     // Placeholder - no futuro, isso virá da configuração da missão
     return [
-      { id: 'z1', type: 'zombie', position: [5, 0.5, -5], health: 30, maxHealth: 30 },
-      { id: 'z2', type: 'zombie', position: [-5, 0.5, -8], health: 30, maxHealth: 30 },
-      { id: 'z3', type: 'zombie', position: [8, 0.5, -3], health: 30, maxHealth: 30 },
-      { id: 'g1', type: 'ghost', position: [-8, 1, -10], health: 20, maxHealth: 20 },
-      { id: 'g2', type: 'ghost', position: [10, 1, -12], health: 20, maxHealth: 20 }
+      { id: 'z1', type: 'zombie', position: [5, 0.5, -5], health: 100, maxHealth: 100 },
+      { id: 'z2', type: 'zombie', position: [-5, 0.5, -8], health: 100, maxHealth: 100 },
+      { id: 'z3', type: 'zombie', position: [8, 0.5, -3], health: 100, maxHealth: 100 },
+      { id: 'g1', type: 'ghost', position: [-8, 1, -10], health: 75, maxHealth: 75 },
+      { id: 'g2', type: 'ghost', position: [10, 1, -12], health: 75, maxHealth: 75 }
     ];
   }
 
@@ -103,12 +103,15 @@ export class GameService {
     const target = enemies.find(e => e.id === targetId);
     if (!target || target.health <= 0) return;
 
-    // Se o cliente enviou um dano customizado (habilidade), usa ele; senão, usa o dano base do personagem
-    const damage = customDamage !== null ? customDamage : attacker.stats.habilidade.dano;
+    // Auto ataque sempre dá 10 de dano para todos os personagens
+    const AUTO_ATTACK_DAMAGE = 10;
+
+    // Se o cliente enviou um dano customizado (habilidade), usa ele; senão, usa 10 de dano
+    const damage = customDamage !== null ? customDamage : AUTO_ATTACK_DAMAGE;
     this.applyDamage(target, damage);
 
     const damageType = customDamage !== null ? '(habilidade)' : '(básico)';
-    console.log(`SERVER: Jogador ${attacker.id} causou ${damage} ${damageType} de dano em ${target.id}. Vida restante: ${target.health}`);
+    console.log(`SERVER: Jogador ${attacker.id} (${attacker.character}) causou ${damage} ${damageType} de dano em ${target.id}. Vida restante: ${target.health}`);
   }
 
   /**

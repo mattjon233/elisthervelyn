@@ -149,6 +149,13 @@ class SocketService {
   requestRespawn() {
     this.emit('request_respawn', {});
   }
+
+  /**
+   * Enviar cura
+   */
+  sendHeal(amount) {
+    this.emit('player_heal', { amount });
+  }
 }
 
 export default new SocketService();

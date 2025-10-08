@@ -308,6 +308,28 @@ export class GameController {
   }
 
   /**
+   * Cura do jogador
+   */
+  handlePlayerHeal(socket, { amount }) {
+    const roomId = this.playerRooms.get(socket.id);
+    const room = this.rooms.get(roomId);
+    if (!room || !room.gameStarted) return;
+
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player) return;
+
+    // Aplica a cura sem ultrapassar o máximo
+    const oldHealth = player.health;
+    player.health = Math.min(player.maxHealth, player.health + amount);
+    const actualHeal = player.health - oldHealth;
+
+    console.log(`SERVER: Jogador ${player.id} curou ${actualHeal} HP (${oldHealth} -> ${player.health})`);
+
+    // Broadcast do novo estado
+    this.io.to(roomId).emit('game_state_updated', { enemies: room.enemies, players: room.players });
+  }
+
+  /**
    * Desconexão
    */
   handleDisconnect(socket) {

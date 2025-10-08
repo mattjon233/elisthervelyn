@@ -1,9 +1,9 @@
 import './AbilityCooldown.css';
 
 const characterAbilityIcons = {
-  esther: '🏹',
+  esther: '✨',
   elissa: '⚔️',
-  evelyn: '🌠',
+  evelyn: '🔥',
 };
 
 function AbilityCooldown({ character, abilityState }) {

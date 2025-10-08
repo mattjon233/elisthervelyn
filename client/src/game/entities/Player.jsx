@@ -6,9 +6,9 @@ import { useAbility } from '../hooks/useAbility';
 import socketService from '../../services/socket';
 import soundService from '../../services/soundService';
 import AttackEffect from './AttackEffect';
-import ArrowProjectile from './abilities/ArrowProjectile';
+import LightBurst from './abilities/LightBurst';
 import BladeSpinEffect from './abilities/BladeSpinEffect';
-import MeteorShower from './abilities/MeteorShower';
+import FireStorm from './abilities/FireStorm';
 
 import { useFrame } from '@react-three/fiber';
 import { useGameStore } from '../../store/gameStore';
@@ -145,15 +145,17 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
 
       {/* Efeitos das habilidades ativas */}
       {activeAbilities.map((ability) => {
-        const playerPosition = meshRef.current?.position;
+        if (!meshRef.current) return null;
+        const playerPosition = meshRef.current.position.clone();
+        const playerRotation = meshRef.current.rotation.clone();
+
         switch (ability.id) {
-          case 'arrow_shot':
-            return <ArrowProjectile key={ability.instanceId} ability={ability} initialPosition={playerPosition} initialRotation={meshRef.current.rotation} onHit={onAbilityHitTarget} enemies={enemies} />;
+          case 'light_burst':
+            return <LightBurst key={ability.instanceId} ability={ability} />;
           case 'blade_spin':
-            // O dano do blade_spin já é tratado na GameScene, mas podemos passar se necessário
             return <BladeSpinEffect key={ability.instanceId} ability={ability} />;
-          case 'meteor_shower':
-            return <MeteorShower key={ability.instanceId} ability={ability} targetPosition={playerPosition} onImpact={onAbilityImpact} />;
+          case 'fire_storm':
+            return <FireStorm key={ability.instanceId} ability={ability} />;
           default:
             return null;
         }
