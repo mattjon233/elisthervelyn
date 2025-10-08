@@ -49,8 +49,9 @@ function Rocket({ position = [2, 0, 2], playerPositions = [] }) {
       rocket.position.z += direction.z * speed * delta;
 
       // Rotacionar na direção do movimento
+      // Invertido porque a cabeça do modelo está em Z negativo
       const angle = Math.atan2(direction.x, direction.z);
-      rocket.rotation.y = angle;
+      rocket.rotation.y = angle + Math.PI;
     }
 
     // Manter no chão
