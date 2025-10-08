@@ -1,0 +1,334 @@
+import { useRef, useState, useEffect } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { Sky } from '@react-three/drei';
+import Ground from './entities/Ground';
+import Oracle from './entities/Oracle';
+import Player from './entities/Player';
+import Zombie from './entities/Zombie';
+import Ghost from './entities/Ghost';
+import Rocket from './entities/Rocket';
+import DeathAnimation from './entities/DeathAnimation';
+import { useGameStore } from '../store/gameStore';
+import socketService from '../services/socket';
+import soundService from '../services/soundService';
+import * as THREE from 'three';
+import { usePrevious } from './hooks/usePrevious';
+
+function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange }) {
+
+  const localPlayerRef = useRef();
+
+  const playerControlsRef = useRef(null);
+
+  const [dyingEnemies, setDyingEnemies] = useState([]);
+
+  const lastAttackTimeRef = useRef(0);
+
+  const hitEnemiesRef = useRef({}); // Rastreia inimigos atingidos por habilidade
+
+
+
+  const [killCount, setKillCount] = useState(0);
+
+  // Notificar mudança no kill count
+  useEffect(() => {
+    if (onKillCountChange) {
+      onKillCountChange(killCount);
+    }
+  }, [killCount, onKillCountChange]);
+
+  const { players, playerId, enemies, updatePlayerMovement } = useGameStore();
+
+  // Listener para movimento de jogadores remotos
+  useEffect(() => {
+    const handlePlayerMoved = (data) => {
+      updatePlayerMovement(data.playerId, data.position, data.rotation);
+    };
+
+    socketService.on('player_moved', handlePlayerMoved);
+
+    return () => {
+      socketService.off('player_moved', handlePlayerMoved);
+    };
+  }, [updatePlayerMovement]);
+
+  // Listener para atualizações de estado do servidor
+  useEffect(() => {
+    const handleStateUpdate = ({ enemies: serverEnemies, players: serverPlayers }) => {
+      useGameStore.getState().setEnemies(serverEnemies);
+      useGameStore.getState().setPlayers(serverPlayers);
+    };
+
+    socketService.on('game_state_updated', handleStateUpdate);
+
+    return () => {
+      socketService.off('game_state_updated', handleStateUpdate);
+    };
+  }, []);
+
+  // Lógica para detectar mortes de inimigos e atualizar kill count
+  const prevEnemies = usePrevious(enemies);
+  useEffect(() => {
+    if (prevEnemies) {
+      prevEnemies.forEach(prevEnemy => {
+        const currentEnemy = enemies.find(e => e.id === prevEnemy.id);
+        // Se o inimigo existia e agora tem vida 0 (ou não existe mais)
+        if (prevEnemy.health > 0 && (!currentEnemy || currentEnemy.health <= 0)) {
+          console.log(`CLIENT: Morte detectada para ${prevEnemy.id}`);
+          soundService.playEnemyDeathSound();
+          if (onKillCountChange) {
+            onKillCountChange(prevCount => prevCount + 1);
+          }
+        }
+      });
+    }
+  }, [enemies, prevEnemies, onKillCountChange]);
+
+  // Respawn de inimigos quando jogador morrer e renascer
+  useEffect(() => {
+    if (!isDead) {
+      // TODO: A lógica de respawn dos inimigos agora deve ser controlada pelo servidor
+      setDyingEnemies([]);
+    }
+  }, [isDead]);
+
+  // Sistema de combate e colisão
+  useFrame((state) => {
+    if (!localPlayerRef.current || isDead) return; // Parar tudo se morto
+
+    const playerPos = localPlayerRef.current.position;
+
+    // Calcular dano base por personagem
+    const getBaseDamage = () => {
+      switch (character?.id) {
+        case 'esther': return 15; // Arqueira
+        case 'elissa': return 20; // Guerreira
+        case 'evelyn': return 12; // Maga
+        default: return 10;
+      }
+    };
+
+    // SISTEMA DE ATAQUE - Envia intenção de ataque para o servidor
+    const isAttacking = playerControlsRef.current?.isAttacking;
+    const currentTime = Date.now();
+
+    if (isAttacking && currentTime - lastAttackTimeRef.current > 500) { // Cooldown de 500ms
+      lastAttackTimeRef.current = currentTime;
+
+      const attackRange = 2.5;
+      const enemiesInRange = enemies.filter(enemy => {
+        const dx = enemy.position[0] - playerPos.x;
+        const dz = enemy.position[2] - playerPos.z;
+        const distance = Math.sqrt(dx * dx + dz * dz);
+        return distance <= attackRange;
+      });
+
+      if (enemiesInRange.length > 0) {
+        const enemyIds = enemiesInRange.map(e => e.id);
+        console.log(`CLIENT: Enviando ataque para inimigos:`, enemyIds);
+        socketService.sendAttack(enemyIds);
+      }
+    }
+
+    // SISTEMA DE HABILIDADES - Envia intenção para o servidor
+    const activeAbilities = localPlayerRef.current?.activeAbilities || [];
+
+    activeAbilities.forEach((ability) => {
+      if (!hitEnemiesRef.current[ability.instanceId]) {
+        hitEnemiesRef.current[ability.instanceId] = new Set();
+      }
+      const hitSet = hitEnemiesRef.current[ability.instanceId];
+
+      switch (ability.type) {
+        case 'melee_area':
+          {
+            const enemiesInRange = enemies.filter(enemy => {
+              if (hitSet.has(enemy.id)) return false;
+              const dx = enemy.position[0] - playerPos.x;
+              const dz = enemy.position[2] - playerPos.z;
+              const distance = Math.sqrt(dx * dx + dz * dz);
+              return distance <= ability.range;
+            });
+            if (enemiesInRange.length > 0) {
+              const enemyIds = enemiesInRange.map(e => e.id);
+              enemyIds.forEach(id => hitSet.add(id)); // Marcar como atingido
+              socketService.sendAttack(enemyIds);
+            }
+          }
+          break;
+      }
+    });
+
+    // Lógica de colisão do jogador local com inimigos
+    enemies.forEach((enemy) => {
+      if (enemy.health <= 0) return; // Ignorar inimigos mortos
+
+      const dx = enemy.position[0] - playerPos.x;
+      const dz = enemy.position[2] - playerPos.z;
+      const distance = Math.sqrt(dx * dx + dz * dz);
+
+      const collisionRadius = 0.8; // Raio de colisão mais ajustado
+
+      if (distance < collisionRadius && distance > 0.01) { // Evita divisão por zero
+        // Calcula força de repulsão baseada na distância (quanto mais perto, mais forte)
+        const pushStrength = (collisionRadius - distance) / collisionRadius * 0.15;
+
+        // Normaliza o vetor de direção
+        const pushX = (playerPos.x - enemy.position[0]) / distance * pushStrength;
+        const pushZ = (playerPos.z - enemy.position[2]) / distance * pushStrength;
+
+        // Aplica uma força para "empurrar" o jogador para longe do inimigo
+        localPlayerRef.current.position.x += pushX;
+        localPlayerRef.current.position.z += pushZ;
+      }
+    });
+
+    // Garante que o jogador fique no chão
+    localPlayerRef.current.position.y = 0.5;
+
+    // Limpeza de instâncias de habilidades que já terminaram
+    const activeInstanceIds = new Set(activeAbilities.map(a => a.instanceId));
+    for (const instanceId in hitEnemiesRef.current) {
+      if (!activeInstanceIds.has(instanceId)) {
+        delete hitEnemiesRef.current[instanceId];
+      }
+    }
+
+    // Passar estado da habilidade para a UI
+    if (onAbilityStateChange) {
+      onAbilityStateChange(localPlayerRef.current?.abilityState);
+    }
+  });
+
+  // Coletar posições dos jogadores para Rocket seguir
+  const playerPositions = players.map(p => p.position).filter(Boolean);
+
+  return (
+    <>
+      {/* Iluminação */}
+      <ambientLight intensity={0.6} />
+      <directionalLight
+        position={[10, 20, 10]}
+        intensity={1}
+        castShadow
+        shadow-mapSize={[2048, 2048]}
+      />
+
+      {/* Céu */}
+      <Sky
+        sunPosition={[100, 20, 100]}
+        turbidity={8}
+        rayleigh={2}
+        mieCoefficient={0.005}
+        mieDirectionalG={0.8}
+      />
+
+      {/* Chão */}
+      <Ground />
+
+      {/* Oráculo */}
+      <Oracle />
+
+      {/* Jogador Local */}
+      <Player
+        ref={localPlayerRef}
+        character={character}
+        position={[0, 0.5, 5]}
+        isLocalPlayer={true}
+        onControlsReady={(controls) => {
+          playerControlsRef.current = controls;
+        }}
+        enemies={enemies} // Passa a lista de inimigos
+        onAbilityHitTarget={(ability, enemyId) => {
+          // Dano de alvo único (flecha) é enviado para o servidor com o dano da habilidade
+          console.log(`🎯 Habilidade ${ability.name} atingiu ${enemyId} causando ${ability.damage} de dano`);
+          socketService.sendAttack([enemyId], ability.damage);
+        }}
+        onAbilityImpact={(ability, impactPosition) => {
+          // Dano em área (meteoro) é calculado e enviado para o servidor com o dano da habilidade
+          const enemiesInRange = enemies.filter(enemy => {
+            const dx = enemy.position[0] - impactPosition.x;
+            const dz = enemy.position[2] - impactPosition.z;
+            const distance = Math.sqrt(dx * dx + dz * dz);
+            return distance <= ability.areaRadius;
+          });
+          if (enemiesInRange.length > 0) {
+            const enemyIds = enemiesInRange.map(e => e.id);
+            console.log(`💥 Habilidade ${ability.name} atingiu ${enemyIds.length} inimigos causando ${ability.damage} de dano cada`);
+            socketService.sendAttack(enemyIds, ability.damage);
+          }
+        }}
+      />
+
+      {/* Jogadores Remotos */}
+      {players.filter(p => p.id !== playerId).map((player) => (
+        <Player
+          key={player.id}
+          character={player.stats} // Os stats do personagem estão aqui
+          position={[player.position?.x || 0, 0.5, player.position?.z || 0]}
+          isLocalPlayer={false}
+        />
+      ))}
+
+      {/* Rocket (NPC cachorro) */}
+      <Rocket playerPositions={playerPositions} />
+
+      {/* Inimigos */}
+      {enemies.map((enemy) => {
+        if (enemy.health > 0) {
+          if (enemy.type === 'zombie') {
+            return (
+              <Zombie
+                key={enemy.id}
+                id={enemy.id}
+                position={enemy.position}
+                health={enemy.health}
+                maxHealth={enemy.maxHealth}
+              />
+            );
+          }
+          if (enemy.type === 'ghost') {
+            return (
+              <Ghost
+                key={enemy.id}
+                id={enemy.id}
+                position={enemy.position}
+                health={enemy.health}
+                maxHealth={enemy.maxHealth}
+              />
+            );
+          }
+        } else {
+          // Se o inimigo não foi renderizado antes (primeira vez com health 0), mostra animação
+          // A "key" diferente garante que o componente seja novo
+          return (
+            <DeathAnimation
+              key={`${enemy.id}-death`}
+              position={enemy.position}
+              type={enemy.type}
+              onComplete={() => {
+                // Eventualmente o servidor vai parar de enviar este inimigo
+              }}
+            />
+          );
+        }
+        return null;
+      })}
+
+      {/* Animações de morte */}
+      {dyingEnemies.map((enemy) => (
+        <DeathAnimation
+          key={`death-${enemy.id}`}
+          position={enemy.position}
+          type={enemy.type}
+          onComplete={() => {
+            // Remover da lista após animação
+            setDyingEnemies((prev) => prev.filter((e) => e.id !== enemy.id));
+          }}
+        />
+      ))}
+    </>
+  );
+}
+
+export default GameScene;

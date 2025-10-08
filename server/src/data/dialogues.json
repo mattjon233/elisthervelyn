@@ -1,0 +1,117 @@
+{
+  "_comentario": "ARQUIVO DE DIÁLOGOS - Edite as falas aqui sem mexer no código do jogo",
+  "_instrucoes": "Cada chave representa um momento do jogo. Adicione novos momentos copiando o formato existente.",
+
+  "intro": {
+    "momento": "Início do jogo - Primeira aparição do Oráculo",
+    "oraculo": [
+      "Bem-vindas, jovens guerreiras! Sou o Oráculo, guardião destas terras mágicas.",
+      "O mal se espalha... vocês três foram escolhidas para restaurar a paz.",
+      "Rocket, o fiel companheiro, estará ao lado de vocês nesta jornada."
+    ],
+    "tipo": "narrativa"
+  },
+
+  "missao_1_briefing": {
+    "momento": "Antes da Missão 1 - Zumbis na Floresta",
+    "oraculo": [
+      "A Floresta Sussurrante foi tomada por zumbis! Limpem a área de 10 criaturas.",
+      "Cuidado com suas garras lentas, mas mortais. Usem seus poderes com sabedoria!"
+    ],
+    "objetivo_texto": "Derrotar 10 Zumbis",
+    "tipo": "missao"
+  },
+
+  "missao_1_completa": {
+    "momento": "Após completar Missão 1",
+    "oraculo": [
+      "Excelente trabalho! A floresta respira aliviada.",
+      "Mas ainda há muito a fazer... preparem-se para o próximo desafio."
+    ],
+    "tipo": "vitoria"
+  },
+
+  "missao_2_briefing": {
+    "momento": "Antes da Missão 2 - Fantasmas no Cemitério",
+    "oraculo": [
+      "O Cemitério Ancestral está assombrado por 8 fantasmas vingativos.",
+      "Eles são mais rápidos que os zumbis. Mantenham-se juntas!"
+    ],
+    "objetivo_texto": "Derrotar 8 Fantasmas",
+    "tipo": "missao"
+  },
+
+  "missao_2_completa": {
+    "momento": "Após completar Missão 2",
+    "oraculo": [
+      "As almas descansam em paz novamente. Vocês são verdadeiras heroínas!",
+      "Porém, sinto uma presença sombria se aproximando..."
+    ],
+    "tipo": "vitoria"
+  },
+
+  "missao_3_briefing": {
+    "momento": "Antes da Missão 3 - Horda Mista",
+    "oraculo": [
+      "A escuridão se intensifica! Zumbis e fantasmas atacam juntos!",
+      "Derrotem 6 zumbis e 6 fantasmas. Confiem em Rocket e uma nas outras!"
+    ],
+    "objetivo_texto": "Derrotar 6 Zumbis e 6 Fantasmas",
+    "tipo": "missao"
+  },
+
+  "missao_3_completa": {
+    "momento": "Após completar Missão 3",
+    "oraculo": [
+      "Incrível! Mas... ele está vindo. COCONARO desperta!",
+      "Preparem-se para a batalha final, guerreiras!"
+    ],
+    "tipo": "vitoria"
+  },
+
+  "boss_briefing": {
+    "momento": "Antes da Batalha Final - COCONARO",
+    "oraculo": [
+      "COCONARO, o Senhor do Coco Maldito, emerge das sombras!",
+      "Vocês devem arrancar seu COCO e arremessá-lo nele 3 vezes para vencê-lo!",
+      "Cuidado com seus ataques devastadores. Trabalhem em equipe!"
+    ],
+    "objetivo_texto": "Coletar o Coco e acertar COCONARO 3 vezes",
+    "tipo": "boss"
+  },
+
+  "boss_dano_1": {
+    "momento": "Primeira vez que COCONARO é atingido",
+    "oraculo": [
+      "Isso! Ele está enfraquecendo! Continuem!"
+    ],
+    "tipo": "combate"
+  },
+
+  "boss_dano_2": {
+    "momento": "Segunda vez que COCONARO é atingido",
+    "oraculo": [
+      "Mais um golpe! Vocês conseguem, guerreiras!"
+    ],
+    "tipo": "combate"
+  },
+
+  "boss_derrotado": {
+    "momento": "Após derrotar COCONARO",
+    "oraculo": [
+      "VITÓRIA! COCONARO foi banido! A paz retorna ao reino!",
+      "Esther, Elissa, Evelyn e Rocket - vocês são as verdadeiras guardiãs!",
+      "Este é apenas o começo das suas aventuras..."
+    ],
+    "tipo": "vitoria_final"
+  },
+
+  "game_over": {
+    "momento": "Todas as jogadoras derrotadas",
+    "oraculo": [
+      "Não desistam, guerreiras! Tentem novamente.",
+      "A esperança ainda vive enquanto vocês lutarem!"
+    ],
+    "tipo": "derrota"
+  }
+}

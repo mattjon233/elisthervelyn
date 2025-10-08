@@ -1,0 +1,153 @@
+{
+  "_comentario": "DADOS DOS PERSONAGENS - Stats, habilidades e configurações",
+
+  "princesas": {
+    "esther": {
+      "nome": "Esther",
+      "classe": "Arqueira",
+      "cor_principal": "#FFB6D9",
+      "stats": {
+        "vida_maxima": 100,
+        "velocidade": 5.0,
+        "estamina": 100
+      },
+      "habilidade": {
+        "nome": "Flecha Precisa",
+        "tipo": "projectile",
+        "dano": 35,
+        "alcance": 20,
+        "cooldown": 1000,
+        "descricao": "Dispara uma flecha de longo alcance com alto dano single-target"
+      },
+      "modelo_placeholder": "cylinder_pink"
+    },
+    "elissa": {
+      "nome": "Elissa",
+      "classe": "Guerreira",
+      "cor_principal": "#D4A5D4",
+      "stats": {
+        "vida_maxima": 150,
+        "velocidade": 4.0,
+        "estamina": 120
+      },
+      "habilidade": {
+        "nome": "Giro Lâmina",
+        "tipo": "melee_area",
+        "dano": 25,
+        "alcance": 3,
+        "cooldown": 2000,
+        "descricao": "Ataque giratório corpo-a-corpo que atinge todos os inimigos próximos"
+      },
+      "modelo_placeholder": "cylinder_purple"
+    },
+    "evelyn": {
+      "nome": "Evelyn",
+      "classe": "Maga",
+      "cor_principal": "#A8D8EA",
+      "stats": {
+        "vida_maxima": 80,
+        "velocidade": 4.5,
+        "estamina": 150
+      },
+      "habilidade": {
+        "nome": "Chuva de Meteoros",
+        "tipo": "area_delayed",
+        "dano": 40,
+        "alcance": 10,
+        "raio_area": 4,
+        "delay": 1500,
+        "cooldown": 3000,
+        "descricao": "Invoca meteoros que caem após delay em área marcada"
+      },
+      "modelo_placeholder": "cylinder_blue"
+    }
+  },
+
+  "npcs": {
+    "rocket": {
+      "nome": "Rocket",
+      "tipo": "cachorro_suporte",
+      "cor_principal": "#D4C5A0",
+      "stats": {
+        "vida_maxima": 80,
+        "velocidade": 6.0
+      },
+      "habilidade_passiva": {
+        "nome": "Latido Protetor",
+        "tipo": "buff_area",
+        "bonus_dano": 1.1,
+        "bonus_velocidade": 1.1,
+        "raio": 5,
+        "descricao": "Jogadoras próximas recebem +10% dano e velocidade"
+      },
+      "habilidade_ativa": {
+        "nome": "Latido Atordoante",
+        "tipo": "stun",
+        "duracao": 2000,
+        "cooldown": 15000,
+        "alcance": 4,
+        "descricao": "Atordoa um inimigo próximo por 2 segundos"
+      },
+      "ia": {
+        "comportamento": "seguir_jogadora_mais_proxima",
+        "usar_habilidade_ativa": "quando_inimigo_proximo"
+      },
+      "modelo_placeholder": "box_brown"
+    },
+
+    "oraculo": {
+      "nome": "Oráculo",
+      "tipo": "narrador",
+      "visual": {
+        "forma": "esfera_flutuante",
+        "cor": "#FFD700",
+        "efeito": "particulas_douradas",
+        "animacao": "levitacao_lenta"
+      },
+      "posicao_inicial": {
+        "x": 0,
+        "y": 8,
+        "z": 0
+      }
+    }
+  },
+
+  "inimigos": {
+    "zumbi": {
+      "nome": "Zumbi",
+      "cor_principal": "#6B8E23",
+      "ia": {
+        "tipo": "perseguir_jogadora_mais_proxima",
+        "alcance_deteccao": 10,
+        "alcance_ataque": 1.5
+      },
+      "modelo_placeholder": "box_green"
+    },
+    "fantasma": {
+      "nome": "Fantasma",
+      "cor_principal": "#E6E6FA",
+      "ia": {
+        "tipo": "perseguir_jogadora_mais_proxima",
+        "alcance_deteccao": 12,
+        "alcance_ataque": 2.0,
+        "comportamento_especial": "atravessa_obstaculos"
+      },
+      "modelo_placeholder": "sphere_white"
+    }
+  },
+
+  "boss": {
+    "coconaro": {
+      "nome": "COCONARO",
+      "cor_principal": "#8B4513",
+      "tamanho": 3.0,
+      "modelo_placeholder": "sphere_brown_large",
+      "coco_item": {
+        "cor": "#D2691E",
+        "tamanho": 0.5,
+        "peso": 1.0,
+        "modelo_placeholder": "sphere_brown_small"
+      }
+    }
+  }
+}

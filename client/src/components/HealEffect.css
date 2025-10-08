@@ -1,0 +1,111 @@
+.heal-effect-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 7777;
+}
+
+/* Partículas verdes flutuantes */
+.heal-particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: radial-gradient(circle, #00ff88 0%, #00ff88 50%, transparent 100%);
+  border-radius: 50%;
+  animation: healParticleFloat 1.5s ease-out forwards;
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.8);
+}
+
+@keyframes healParticleFloat {
+  0% {
+    transform: translate(0, 0) scale(0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, -150px) scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* Texto flutuante +5 HP */
+.heal-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 3rem;
+  font-weight: bold;
+  color: #00ff88;
+  text-shadow:
+    0 0 10px rgba(0, 255, 136, 0.8),
+    0 0 20px rgba(0, 255, 136, 0.6),
+    0 0 30px rgba(0, 255, 136, 0.4),
+    2px 2px 4px rgba(0, 0, 0, 0.8);
+  animation: healTextFloat 1.5s ease-out forwards;
+  pointer-events: none;
+  user-select: none;
+}
+
+@keyframes healTextFloat {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+  40% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    transform: translate(-50%, -200px) scale(0.8);
+    opacity: 0;
+  }
+}
+
+/* Flash verde suave na tela */
+.heal-flash {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 255, 136, 0) 0%,
+    rgba(0, 255, 136, 0.15) 30%,
+    rgba(0, 255, 136, 0) 70%
+  );
+  animation: healFlash 1.5s ease-out forwards;
+}
+
+@keyframes healFlash {
+  0% {
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Mobile - texto menor */
+@media (max-width: 768px) {
+  .heal-text {
+    font-size: 2rem;
+  }
+
+  .heal-particle {
+    width: 6px;
+    height: 6px;
+  }
+}

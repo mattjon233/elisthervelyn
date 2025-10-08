@@ -1,0 +1,177 @@
+/* --- Estrutura Principal --- */
+.game-ui {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  color: white;
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+/* --- HUD Superior --- */
+.hud-top {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  right: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+.hud-widget {
+  background: rgba(20, 20, 30, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 10px 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+/* --- Widget do Jogador --- */
+.character-info-widget {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 280px;
+}
+
+.character-portrait {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.character-details {
+  flex-grow: 1;
+}
+
+.character-name {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.health-bar {
+  width: 100%;
+  height: 20px;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  position: relative;
+}
+
+.health-fill {
+  height: 100%;
+  background: linear-gradient(to right, #f85032, #e73827);
+  border-radius: 10px;
+  transition: width 0.3s ease-in-out;
+  box-shadow: inset 0 -2px 4px rgba(0,0,0,0.4);
+}
+
+.health-text {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* --- Widget de Missão --- */
+.mission-info-widget {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 15px 20px;
+}
+
+.mission-text {
+  font-size: 14px;
+  font-weight: normal;
+  max-width: 300px;
+}
+
+.kill-counter {
+  font-size: 24px;
+  font-weight: bold;
+  color: #ffd700; /* Dourado */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* --- Diálogo --- */
+.dialogue-box {
+  position: absolute;
+  bottom: 15%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 700px;
+  padding: 20px;
+  background: rgba(20, 20, 30, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translate(-50%, 20px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.dialogue-speaker {
+  font-size: 16px;
+  font-weight: bold;
+  color: #ffd700;
+  margin-bottom: 10px;
+}
+
+.dialogue-text {
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+/* --- Controles Touch --- */
+.touch-controls {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  pointer-events: all;
+}
+
+/* --- Responsividade --- */
+@media (max-width: 768px) {
+  .hud-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .mission-info-widget {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .dialogue-box {
+    bottom: 180px; /* Abrir espaço para os controles de toque */
+  }
+}

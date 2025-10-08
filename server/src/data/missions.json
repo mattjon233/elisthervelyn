@@ -1,0 +1,115 @@
+{
+  "_comentario": "ESTRUTURA DE MISSÕES - Defina objetivos, inimigos e progressão aqui",
+  "_instrucoes": "Para adicionar novas missões, copie a estrutura de 'mission_1' e aumente o ID. O sistema carregará automaticamente.",
+
+  "missions": [
+    {
+      "id": 1,
+      "nome": "Floresta Sussurrante",
+      "descricao": "Limpar a floresta de zumbis",
+      "ambiente": "forest",
+      "objetivos": {
+        "tipo": "eliminar",
+        "alvos": {
+          "zumbis": 10
+        }
+      },
+      "spawn_config": {
+        "zumbis": {
+          "quantidade": 10,
+          "intervalo_spawn": 3000,
+          "vida": 30,
+          "dano": 10,
+          "velocidade": 1.2
+        }
+      },
+      "dialogo_inicio": "missao_1_briefing",
+      "dialogo_completo": "missao_1_completa"
+    },
+    {
+      "id": 2,
+      "nome": "Cemitério Ancestral",
+      "descricao": "Libertar o cemitério dos fantasmas",
+      "ambiente": "cemetery",
+      "objetivos": {
+        "tipo": "eliminar",
+        "alvos": {
+          "fantasmas": 8
+        }
+      },
+      "spawn_config": {
+        "fantasmas": {
+          "quantidade": 8,
+          "intervalo_spawn": 4000,
+          "vida": 20,
+          "dano": 15,
+          "velocidade": 2.0
+        }
+      },
+      "dialogo_inicio": "missao_2_briefing",
+      "dialogo_completo": "missao_2_completa"
+    },
+    {
+      "id": 3,
+      "nome": "Invasão das Sombras",
+      "descricao": "Resistir ao ataque combinado",
+      "ambiente": "ruins",
+      "objetivos": {
+        "tipo": "eliminar",
+        "alvos": {
+          "zumbis": 6,
+          "fantasmas": 6
+        }
+      },
+      "spawn_config": {
+        "zumbis": {
+          "quantidade": 6,
+          "intervalo_spawn": 3000,
+          "vida": 35,
+          "dano": 12,
+          "velocidade": 1.3
+        },
+        "fantasmas": {
+          "quantidade": 6,
+          "intervalo_spawn": 4000,
+          "vida": 25,
+          "dano": 18,
+          "velocidade": 2.2
+        }
+      },
+      "dialogo_inicio": "missao_3_briefing",
+      "dialogo_completo": "missao_3_completa"
+    }
+  ],
+
+  "boss_fight": {
+    "id": "boss_coconaro",
+    "nome": "COCONARO - O Senhor do Coco",
+    "ambiente": "boss_arena",
+    "vida": 300,
+    "fases": 3,
+    "mecanica_especial": {
+      "tipo": "coco_throw",
+      "descricao": "Jogadoras devem coletar o Coco que COCONARO dropa e arremessar nele",
+      "dano_por_acerto": 100,
+      "acertos_necessarios": 3
+    },
+    "ataques": [
+      {
+        "nome": "Investida",
+        "dano": 25,
+        "cooldown": 5000
+      },
+      {
+        "nome": "Onda de Choque",
+        "dano": 15,
+        "area": 5,
+        "cooldown": 8000
+      }
+    ],
+    "dialogo_inicio": "boss_briefing",
+    "dialogo_dano_1": "boss_dano_1",
+    "dialogo_dano_2": "boss_dano_2",
+    "dialogo_derrotado": "boss_derrotado"
+  }
+}
