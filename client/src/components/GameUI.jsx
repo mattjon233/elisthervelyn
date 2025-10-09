@@ -3,11 +3,12 @@ import './GameUI.css';
 import VirtualJoystick from './VirtualJoystick';
 import AbilityCooldown from './AbilityCooldown';
 import { useGameStore } from '../store/gameStore';
-
+import { useMissionStore } from '../store/missionStore';
 import { usePrevious } from '../game/hooks/usePrevious';
 
 function GameUI({ character, killCount = 0, abilityState }) {
   const { players, playerId, currentDialogue, currentMission, triggerDamageEffect, triggerHealEffect } = useGameStore();
+  const { teamGold } = useMissionStore();
   const [mission, setMission] = useState('Aguardando missão...');
 
   // Encontra os dados do jogador local na lista de jogadores
@@ -87,8 +88,13 @@ function GameUI({ character, killCount = 0, abilityState }) {
         {/* Widget de Missão e Kills */}
         <div className="hud-widget mission-info-widget">
           <div className="mission-text">{mission}</div>
-          <div className="kill-counter">
-            💀 {killCount}
+          <div className="stats-row">
+            <div className="kill-counter">
+              💀 {killCount}
+            </div>
+            <div className="gold-counter">
+              💰 {teamGold} Ouro
+            </div>
           </div>
         </div>
       </div>

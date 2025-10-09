@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import GameScene from '../game/GameScene';
 import GameUI from './GameUI';
+import MissionUI from './MissionUI';
 import GameOverScreen from './GameOverScreen';
 import DamageOverlay from './DamageOverlay';
 import HealEffect from './HealEffect';
@@ -69,6 +70,9 @@ function Game({ roomData }) {
         killCount={killCount}
         abilityState={abilityState}
       />
+
+      {/* UI de Missões */}
+      <MissionUI />
 
       {/* Tela de Game Over */}
       {isDead && (

@@ -3,12 +3,14 @@ import { useFrame } from '@react-three/fiber';
 import { Sky } from '@react-three/drei';
 import Ground from './entities/Ground';
 import Oracle from './entities/Oracle';
+import MapBoundary from './entities/MapBoundary';
 import Player from './entities/Player';
 import Zombie from './entities/Zombie';
 import Ghost from './entities/Ghost';
 import Rocket from './entities/Rocket';
 import DeathAnimation from './entities/DeathAnimation';
 import { useGameStore } from '../store/gameStore';
+import { useMissionStore } from '../store/missionStore';
 import socketService from '../services/socket';
 import soundService from '../services/soundService';
 import * as THREE from 'three';
@@ -66,8 +68,27 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange 
     };
   }, []);
 
+  // Listener para atualizações de missão do servidor (colaborativa)
+  useEffect(() => {
+    const handleMissionUpdate = ({ activeMission, missionProgress, teamGold }) => {
+      useMissionStore.setState({
+        activeMission: activeMission,
+        missionProgress: missionProgress,
+        missionReadyToComplete: activeMission ? missionProgress >= activeMission.requiredCount : false,
+        teamGold: teamGold
+      });
+    };
+
+    socketService.on('mission_updated', handleMissionUpdate);
+
+    return () => {
+      socketService.off('mission_updated', handleMissionUpdate);
+    };
+  }, []);
+
   // Lógica para detectar mortes de inimigos e atualizar kill count
   const prevEnemies = usePrevious(enemies);
+
   useEffect(() => {
     if (prevEnemies) {
       prevEnemies.forEach(prevEnemy => {
@@ -79,6 +100,9 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange 
           if (onKillCountChange) {
             onKillCountChange(prevCount => prevCount + 1);
           }
+
+          // Enviar progresso da missão para o servidor (kill count individual)
+          socketService.emit('mission_progress', { enemyType: prevEnemy.type });
         }
       });
     }
@@ -250,14 +274,17 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange 
       {/* Chão */}
       <Ground />
 
-      {/* Oráculo */}
-      <Oracle />
+      {/* Barreiras do mapa */}
+      <MapBoundary />
 
-      {/* Jogador Local */}
+      {/* Oráculo */}
+      <Oracle playerPosition={localPlayerRef.current?.position ? [localPlayerRef.current.position.x, localPlayerRef.current.position.y, localPlayerRef.current.position.z] : [0, 0, 0]} />
+
+      {/* Jogador Local - Respawn perto do Oracle */}
       <Player
         ref={localPlayerRef}
         character={character}
-        position={[0, 0.5, 5]}
+        position={[32, 0.5, 32]}
         isLocalPlayer={true}
         onControlsReady={(controls) => {
           playerControlsRef.current = controls;

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import './Lobby.css';
 import socketService from '../services/socket';
 import { useGameStore } from '../store/gameStore';
+import { useMissionStore } from '../store/missionStore';
 
 function Lobby({ onGameStart }) {
   const [screen, setScreen] = useState('menu'); // 'menu' | 'create' | 'join' | 'waiting'
@@ -11,6 +12,7 @@ function Lobby({ onGameStart }) {
   const [error, setError] = useState('');
 
   const { setPlayerId, setRoomId: setStoreRoomId, setPlayers } = useGameStore();
+  const { reset: resetMissions } = useMissionStore();
 
   const characters = [
     { id: 'esther', name: 'Esther', class: 'Arqueira', color: '#FFB6D9' },
@@ -21,6 +23,9 @@ function Lobby({ onGameStart }) {
   useEffect(() => {
     // Conectar ao servidor
     const socket = socketService.connect();
+
+    // Reset mission state when entering lobby
+    resetMissions();
 
     // Listeners de eventos
     socketService.on('player_joined', (data) => {
@@ -59,7 +64,7 @@ function Lobby({ onGameStart }) {
       socketService.off('game_started');
       socketService.off('error');
     };
-  }, []);
+  }, [resetMissions]);
 
   const handleCreateRoom = async () => {
     try {

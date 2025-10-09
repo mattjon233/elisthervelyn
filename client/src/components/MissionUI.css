@@ -1,0 +1,142 @@
+.mission-ui {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 320px;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 20px;
+  color: white;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  border: 2px solid rgba(255, 215, 0, 0.5);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+}
+
+.mission-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.mission-icon {
+  font-size: 24px;
+}
+
+.mission-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #FFD700;
+}
+
+.mission-description {
+  font-size: 14px;
+  color: #E0E0E0;
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.mission-progress {
+  margin-bottom: 16px;
+}
+
+.progress-text {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.progress-text span.complete {
+  color: #4CAF50;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  transition: width 0.3s ease;
+  border-radius: 6px;
+}
+
+.mission-complete {
+  background: rgba(76, 175, 80, 0.2);
+  border: 1px solid #4CAF50;
+  color: #4CAF50;
+  padding: 10px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 16px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.02);
+  }
+}
+
+.mission-reward {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.reward-label {
+  font-size: 12px;
+  color: #B0B0B0;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  width: 100%;
+}
+
+.reward-item {
+  background: rgba(255, 215, 0, 0.15);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .mission-ui {
+    top: 10px;
+    right: 10px;
+    width: 280px;
+    padding: 16px;
+  }
+
+  .mission-header h3 {
+    font-size: 16px;
+  }
+
+  .mission-description {
+    font-size: 13px;
+  }
+}

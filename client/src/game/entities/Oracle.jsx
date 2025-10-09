@@ -1,32 +1,188 @@
-import { useRef } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { Text } from '@react-three/drei';
+import * as THREE from 'three';
+import { useMissionStore } from '../../store/missionStore';
+import socketService from '../../services/socket';
+import SpeechBubble from './SpeechBubble';
 
-function Oracle() {
+/**
+ * Oracle - NPC que dá missões
+ * Jogadores podem interagir pressionando E quando próximos
+ */
+function Oracle({ playerPosition = [0, 0, 0] }) {
   const meshRef = useRef();
+  const ringRef = useRef();
+  const [isPlayerNearby, setIsPlayerNearby] = useState(false);
+  const [speechText, setSpeechText] = useState('');
+  const interactionDistance = 3; // Distância para interagir
 
-  // Animação de levitação
+  const { activeMission, missionReadyToComplete, acceptMission, completeMission } = useMissionStore();
+
+  // Posição do Oracle no canto do mapa
+  const oraclePosition = [35, 0, 35];
+
   useFrame((state) => {
-    if (meshRef.current) {
-      meshRef.current.position.y = 8 + Math.sin(state.clock.elapsedTime) * 0.3;
-      meshRef.current.rotation.y = state.clock.elapsedTime * 0.2;
+    // Animar anel de interação
+    if (ringRef.current && isPlayerNearby) {
+      ringRef.current.rotation.z = state.clock.elapsedTime * 0.5;
     }
+
+    // Verificar proximidade do jogador
+    const oraclePos = new THREE.Vector3(oraclePosition[0], 0, oraclePosition[2]);
+    const playerPos = new THREE.Vector3(playerPosition[0], 0, playerPosition[2]);
+    const distance = oraclePos.distanceTo(playerPos);
+
+    setIsPlayerNearby(distance <= interactionDistance);
   });
 
+  // Listener para tecla E
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (e.key.toLowerCase() === 'e' && isPlayerNearby) {
+        handleInteraction();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [isPlayerNearby, activeMission, missionReadyToComplete]);
+
+  const handleInteraction = () => {
+    if (!activeMission) {
+      // Aceitar nova missão - enviar para o servidor
+      setSpeechText('Eliminem os mortos-vivos que ameaçam nossa terra!');
+      socketService.emit('mission_accept', { missionId: 'kill_zombies_1' });
+
+      setTimeout(() => setSpeechText(''), 4000);
+    } else if (missionReadyToComplete) {
+      // Completar missão - enviar para o servidor
+      setSpeechText('Excelente trabalho! Aqui está sua recompensa.');
+      socketService.emit('mission_complete');
+
+      setTimeout(() => setSpeechText(''), 4000);
+    }
+  };
+
+  // Atualizar balão de fala quando jogador se aproxima
+  useEffect(() => {
+    if (isPlayerNearby && !speechText) {
+      if (!activeMission) {
+        setSpeechText('Olá, jovens! Preciso de sua ajuda...');
+      } else if (missionReadyToComplete) {
+        setSpeechText('Retornaram vitoriosas! Venham receber a recompensa.');
+      }
+    } else if (!isPlayerNearby && speechText && !activeMission) {
+      setSpeechText('');
+    }
+  }, [isPlayerNearby, activeMission, missionReadyToComplete]);
+
+  // Determinar texto de interação
+  let interactionText = '';
+  if (!activeMission) {
+    interactionText = 'Pressione E - Nova Missão';
+  } else if (missionReadyToComplete) {
+    interactionText = 'Pressione E - Coletar Recompensa';
+  } else {
+    interactionText = 'Missão em Progresso';
+  }
+
   return (
-    <group>
-      <mesh ref={meshRef} position={[0, 8, 0]} castShadow>
-        <sphereGeometry args={[0.8, 32, 32]} />
+    <group position={oraclePosition}>
+      {/* Corpo (túnica longa) */}
+      <mesh position={[0, 1.2, 0]} castShadow>
+        <cylinderGeometry args={[0.6, 0.8, 2.4, 8]} />
+        <meshStandardMaterial color="#4A3B2A" roughness={0.9} />
+      </mesh>
+
+      {/* Cabeça */}
+      <mesh position={[0, 2.7, 0]} castShadow>
+        <sphereGeometry args={[0.35, 16, 16]} />
+        <meshStandardMaterial color="#F5D5C3" roughness={0.8} />
+      </mesh>
+
+      {/* Barba longa branca */}
+      <mesh position={[0, 2.3, 0.25]} castShadow>
+        <coneGeometry args={[0.3, 0.8, 8]} />
+        <meshStandardMaterial color="#E8E8E8" roughness={1} />
+      </mesh>
+
+      {/* Cabelo/capuz */}
+      <mesh position={[0, 2.95, 0]} castShadow>
+        <sphereGeometry args={[0.38, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color="#6B5B47" roughness={0.9} />
+      </mesh>
+
+      {/* Olhos */}
+      <mesh position={[-0.12, 2.75, 0.3]}>
+        <sphereGeometry args={[0.05, 8, 8]} />
+        <meshBasicMaterial color="#2C1810" />
+      </mesh>
+      <mesh position={[0.12, 2.75, 0.3]}>
+        <sphereGeometry args={[0.05, 8, 8]} />
+        <meshBasicMaterial color="#2C1810" />
+      </mesh>
+
+      {/* Cajado/Bastão */}
+      <mesh position={[0.6, 1.5, 0]} rotation={[0, 0, -0.2]} castShadow>
+        <cylinderGeometry args={[0.06, 0.06, 3.5, 8]} />
+        <meshStandardMaterial color="#5D4E37" roughness={0.8} />
+      </mesh>
+
+      {/* Cristal no topo do cajado */}
+      <mesh position={[0.75, 3.2, 0]} castShadow>
+        <octahedronGeometry args={[0.15, 0]} />
         <meshStandardMaterial
-          color="#FFD700"
-          emissive="#FFD700"
+          color="#87CEEB"
+          emissive="#87CEEB"
           emissiveIntensity={0.5}
-          metalness={0.8}
-          roughness={0.2}
+          transparent
+          opacity={0.8}
         />
       </mesh>
 
-      {/* Partículas douradas (placeholder simples) */}
-      <pointLight position={[0, 8, 0]} color="#FFD700" intensity={1} distance={10} />
+      {/* Luz do cristal */}
+      <pointLight position={[0.75, 3.2, 0]} color="#87CEEB" intensity={0.5} distance={5} />
+
+      {/* Balão de fala */}
+      {speechText && <SpeechBubble text={speechText} position={[0, 4, 0]} />}
+
+      {/* Zona de interação no chão */}
+      {isPlayerNearby && (
+        <>
+          <mesh ref={ringRef} position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[2.5, 3, 32]} />
+            <meshBasicMaterial
+              color="#87CEEB"
+              transparent
+              opacity={0.3}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+
+          {/* Texto de interação */}
+          <Text
+            position={[0, 3.5, 0]}
+            fontSize={0.3}
+            color="#FFFFFF"
+            anchorX="center"
+            anchorY="middle"
+            outlineWidth={0.02}
+            outlineColor="#000000"
+          >
+            {interactionText}
+          </Text>
+        </>
+      )}
+
+      {/* Base/Pedestal */}
+      <mesh position={[0, 0.1, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[1.2, 1.4, 0.2, 8]} />
+        <meshStandardMaterial color="#8B7355" roughness={0.7} />
+      </mesh>
+
+      {/* Luz ambiente suave ao redor */}
+      <pointLight position={[0, 2, 0]} color="#FFF8DC" intensity={0.3} distance={8} />
     </group>
   );
 }

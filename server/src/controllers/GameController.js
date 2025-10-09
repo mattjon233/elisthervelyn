@@ -57,7 +57,11 @@ export class GameController {
       maxPlayers: 3,
       gameStarted: false,
       currentMission: 0,
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      // Missões colaborativas
+      activeMission: null,
+      missionProgress: 0,
+      teamGold: 0
     };
 
     this.rooms.set(roomId, room);
@@ -117,7 +121,7 @@ export class GameController {
       character,
       ready: true,
       stats: this.gameService.getCharacterStats(character),
-      position: { x: 0, y: 0.5, z: 5 }, // Posição inicial padrão
+      position: { x: 30 + Math.random() * 4, y: 0.5, z: 30 + Math.random() * 4 }, // Spawn perto do Oracle
       health: this.gameService.getCharacterStats(character).stats.vida_maxima,
       maxHealth: this.gameService.getCharacterStats(character).stats.vida_maxima,
     };
@@ -327,6 +331,85 @@ export class GameController {
 
     // Broadcast do novo estado
     this.io.to(roomId).emit('game_state_updated', { enemies: room.enemies, players: room.players });
+  }
+
+  /**
+   * Aceitar missão (colaborativa)
+   */
+  handleMissionAccept(socket, { missionId }) {
+    const roomId = this.playerRooms.get(socket.id);
+    const room = this.rooms.get(roomId);
+    if (!room || !room.gameStarted) return;
+
+    // Define missão ativa para toda a sala
+    room.activeMission = {
+      id: missionId,
+      title: 'Eliminar os Mortos-Vivos',
+      description: 'O Oráculo pede que vocês eliminem 5 zumbis que ameaçam a região.',
+      type: 'kill',
+      target: 'zombie',
+      requiredCount: 5
+    };
+    room.missionProgress = 0;
+
+    console.log(`SERVER: Sala ${roomId} aceitou missão ${missionId}`);
+
+    // Broadcast para todos na sala
+    this.io.to(roomId).emit('mission_updated', {
+      activeMission: room.activeMission,
+      missionProgress: room.missionProgress,
+      teamGold: room.teamGold
+    });
+  }
+
+  /**
+   * Incrementar progresso da missão (quando mata inimigo)
+   */
+  handleMissionProgress(socket, { enemyType }) {
+    const roomId = this.playerRooms.get(socket.id);
+    const room = this.rooms.get(roomId);
+    if (!room || !room.gameStarted || !room.activeMission) return;
+
+    // Verificar se é o tipo certo de inimigo
+    if (room.activeMission.target !== enemyType) return;
+
+    room.missionProgress++;
+    console.log(`SERVER: Missão progresso ${room.missionProgress}/${room.activeMission.requiredCount}`);
+
+    // Broadcast para todos
+    this.io.to(roomId).emit('mission_updated', {
+      activeMission: room.activeMission,
+      missionProgress: room.missionProgress,
+      teamGold: room.teamGold
+    });
+  }
+
+  /**
+   * Completar missão e coletar recompensa
+   */
+  handleMissionComplete(socket) {
+    const roomId = this.playerRooms.get(socket.id);
+    const room = this.rooms.get(roomId);
+    if (!room || !room.gameStarted || !room.activeMission) return;
+
+    // Verificar se completou
+    if (room.missionProgress < room.activeMission.requiredCount) return;
+
+    // Adicionar recompensa
+    room.teamGold += 100;
+
+    console.log(`SERVER: Sala ${roomId} completou missão! +100 ouro (Total: ${room.teamGold})`);
+
+    // Limpar missão
+    room.activeMission = null;
+    room.missionProgress = 0;
+
+    // Broadcast para todos
+    this.io.to(roomId).emit('mission_updated', {
+      activeMission: room.activeMission,
+      missionProgress: room.missionProgress,
+      teamGold: room.teamGold
+    });
   }
 
   /**

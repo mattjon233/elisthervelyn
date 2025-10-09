@@ -37,13 +37,32 @@ export class GameService {
    * Gera a lista inicial de inimigos para uma sala
    */
   getInitialEnemies() {
-    // Placeholder - no futuro, isso virá da configuração da missão
+    // Inimigos espalhados pelo mapa
     return [
-      { id: 'z1', type: 'zombie', position: [5, 0.5, -5], health: 100, maxHealth: 100 },
-      { id: 'z2', type: 'zombie', position: [-5, 0.5, -8], health: 100, maxHealth: 100 },
-      { id: 'z3', type: 'zombie', position: [8, 0.5, -3], health: 100, maxHealth: 100 },
-      { id: 'g1', type: 'ghost', position: [-8, 1, -10], health: 75, maxHealth: 75 },
-      { id: 'g2', type: 'ghost', position: [10, 1, -12], health: 75, maxHealth: 75 }
+      // Zombies - Grupo 1 (Norte)
+      { id: 'z1', type: 'zombie', position: [5, 0.5, -10], health: 100, maxHealth: 100 },
+      { id: 'z2', type: 'zombie', position: [-5, 0.5, -12], health: 100, maxHealth: 100 },
+      { id: 'z3', type: 'zombie', position: [8, 0.5, -8], health: 100, maxHealth: 100 },
+
+      // Zombies - Grupo 2 (Sul)
+      { id: 'z4', type: 'zombie', position: [10, 0.5, 10], health: 100, maxHealth: 100 },
+      { id: 'z5', type: 'zombie', position: [-8, 0.5, 12], health: 100, maxHealth: 100 },
+      { id: 'z6', type: 'zombie', position: [6, 0.5, 15], health: 100, maxHealth: 100 },
+
+      // Zombies - Grupo 3 (Leste)
+      { id: 'z7', type: 'zombie', position: [15, 0.5, -5], health: 100, maxHealth: 100 },
+      { id: 'z8', type: 'zombie', position: [18, 0.5, 2], health: 100, maxHealth: 100 },
+
+      // Zombies - Grupo 4 (Oeste)
+      { id: 'z9', type: 'zombie', position: [-15, 0.5, -3], health: 100, maxHealth: 100 },
+      { id: 'z10', type: 'zombie', position: [-18, 0.5, 5], health: 100, maxHealth: 100 },
+
+      // Fantasmas espalhados
+      { id: 'g1', type: 'ghost', position: [-10, 1, -15], health: 75, maxHealth: 75 },
+      { id: 'g2', type: 'ghost', position: [12, 1, -18], health: 75, maxHealth: 75 },
+      { id: 'g3', type: 'ghost', position: [15, 1, 12], health: 75, maxHealth: 75 },
+      { id: 'g4', type: 'ghost', position: [-12, 1, 15], health: 75, maxHealth: 75 },
+      { id: 'g5', type: 'ghost', position: [20, 1, -8], health: 75, maxHealth: 75 }
     ];
   }
 
@@ -116,10 +135,18 @@ export class GameService {
 
   /**
    * Restaura a vida de um jogador e o torna invulnerável
+   * Respawn perto do Oracle (canto do mapa em [35, 0, 35])
    */
   respawnPlayer(player) {
     player.health = player.maxHealth;
     player.invulnerableUntil = Date.now() + 5000; // 5 segundos de invulnerabilidade
+
+    // Respawn perto do Oracle com pequena variação
+    player.position = {
+      x: 30 + Math.random() * 4, // 30-34 (perto do Oracle em x=35)
+      y: 0.5,
+      z: 30 + Math.random() * 4  // 30-34 (perto do Oracle em z=35)
+    };
   }
 
   /**

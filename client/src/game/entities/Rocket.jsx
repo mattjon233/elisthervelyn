@@ -11,7 +11,7 @@ import soundService from '../../services/soundService';
  * - Buffa jogadoras próximas (+10% dano/velocidade)
  * - Ocasionalmente stuna inimigos com latido
  */
-function Rocket({ position = [2, 0, 2], playerPositions = [] }) {
+function Rocket({ position = [32, 0, 32], playerPositions = [] }) {
   const meshRef = useRef();
   const speed = 3.5;
   const followDistance = 3;

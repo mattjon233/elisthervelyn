@@ -6,7 +6,7 @@ import * as THREE from 'three';
  * Hook para controlar movimento do personagem
  * Movimento simples e intuitivo - WASD move relativo à tela
  */
-export function usePlayerControls(playerRef, speed = 8.0, triggerAbility) {
+export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead = false) {
   const [keys, setKeys] = useState({
     w: false,
     a: false,
@@ -28,6 +28,8 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility) {
   // Keyboard listeners
   useEffect(() => {
     const handleKeyDown = (e) => {
+      if (isDead) return; // Não aceitar input se morto
+
       const key = e.key.toLowerCase();
       // Inclui 'q' para habilidade
       if (['w', 'a', 's', 'd', ' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'f', 'j', 'q'].includes(key)) {
@@ -80,6 +82,7 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility) {
 
     // Mouse click para ataque
     const handleMouseDown = (e) => {
+      if (isDead) return; // Não aceitar input se morto
       if (e.button === 0) { // Botão esquerdo
         setKeys((prev) => ({ ...prev, attack: true }));
       }
@@ -106,11 +109,11 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility) {
       window.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, []);
+  }, [isDead]);
 
   // Atualizar movimento a cada frame
   useFrame((state, delta) => {
-    if (!playerRef.current) return;
+    if (!playerRef.current || isDead) return; // Não mover se morto
 
     // Resetar direção
     moveDirection.current.set(0, 0, 0);
@@ -153,10 +156,10 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility) {
     // Manter no chão
     playerRef.current.position.y = 0.5;
 
-    // Limites do mapa
-    const mapSize = 25;
-    playerRef.current.position.x = Math.max(-mapSize, Math.min(mapSize, playerRef.current.position.x));
-    playerRef.current.position.z = Math.max(-mapSize, Math.min(mapSize, playerRef.current.position.z));
+    // Colisão com paredes do mapa (limites em ±49 para dar espaço antes da parede)
+    const mapLimit = 49;
+    playerRef.current.position.x = Math.max(-mapLimit, Math.min(mapLimit, playerRef.current.position.x));
+    playerRef.current.position.z = Math.max(-mapLimit, Math.min(mapLimit, playerRef.current.position.z));
   });
 
   // Detectar ataque

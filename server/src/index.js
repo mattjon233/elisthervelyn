@@ -48,6 +48,11 @@ io.on('connection', (socket) => {
   socket.on('player_heal', (data) => gameController.handlePlayerHeal(socket, data));
   socket.on('request_respawn', () => gameController.handlePlayerRespawn(socket));
 
+  // Missões colaborativas
+  socket.on('mission_accept', (data) => gameController.handleMissionAccept(socket, data));
+  socket.on('mission_progress', (data) => gameController.handleMissionProgress(socket, data));
+  socket.on('mission_complete', () => gameController.handleMissionComplete(socket));
+
   // Desconexão
   socket.on('disconnect', () => gameController.handleDisconnect(socket));
 });

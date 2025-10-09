@@ -31,6 +31,7 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
   // Pega o estado do jogador da store para invulnerabilidade
   const { players, playerId } = useGameStore();
   const playerData = players.find(p => p.id === playerId);
+  const isDead = isLocalPlayer && playerData ? playerData.health <= 0 : false;
 
   // Habilidades (apenas para o jogador local)
   const { abilityState, triggerAbility, activeAbilities } = isLocalPlayer
@@ -38,7 +39,7 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
     : { abilityState: {}, triggerAbility: () => {}, activeAbilities: [] };
 
   // Controles (apenas para o jogador local)
-  const controls = isLocalPlayer ? usePlayerControls(meshRef, 8.0, triggerAbility) : null;
+  const controls = isLocalPlayer ? usePlayerControls(meshRef, 8.0, triggerAbility, isDead) : null;
 
   // Sistema de combate (apenas para o jogador local)
   const combat = isLocalPlayer && controls
@@ -148,6 +149,11 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
     evelyn: '#8B6F47'   // Castanho claro
   };
   const hairColor = hairColors[character?.id] || '#8B6F47';
+
+  // Não renderizar se estiver morto
+  if (isDead) {
+    return null;
+  }
 
   return (
     <group ref={meshRef} position={position}>
