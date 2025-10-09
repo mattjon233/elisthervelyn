@@ -191,8 +191,10 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
       smoothVelocity.current.lerp(new THREE.Vector3(0, 0, 0), 0.3);
     }
 
-    // Manter no chão
-    playerRef.current.position.y = 0.5;
+    // Manter no chão (mas não sobrescrever animação de bounce se estiver próximo de 0.5)
+    if (playerRef.current.position.y < 0.45 || playerRef.current.position.y > 0.6) {
+      playerRef.current.position.y = 0.5;
+    }
 
     // Colisão com paredes do mapa (limites em ±49 para dar espaço antes da parede)
     const mapLimit = 49;

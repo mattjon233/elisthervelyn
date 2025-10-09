@@ -12,12 +12,16 @@ import FireStorm from './abilities/FireStorm';
 
 import { useFrame } from '@react-three/fiber';
 import { useGameStore } from '../../store/gameStore';
+import * as THREE from 'three';
 
 const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = true, onControlsReady, onAbilityImpact, onAbilityHitTarget, enemies }, ref) => {
   const meshRef = useRef();
   const materialRef = useRef();
+  const leftLegRef = useRef();
+  const rightLegRef = useRef();
   const [showAttackEffect, setShowAttackEffect] = useState(false);
   const attackAnimProgress = useRef(0);
+  const walkCycle = useRef(0);
 
   // Cores por personagem
   const colors = {
@@ -51,7 +55,7 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
     ? useCombat(meshRef, character, controls.isAttacking)
     : null;
 
-  // Efeito de invulnerabilidade e animação de ataque
+  // Efeito de invulnerabilidade, animação de ataque e animação de caminhada
   useFrame(({ clock }, delta) => {
     if (isLocalPlayer && materialRef.current) {
       const isInvulnerable = playerData?.invulnerableUntil && Date.now() < playerData.invulnerableUntil;
@@ -61,6 +65,34 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
         materialRef.current.emissive.setRGB(pulse, pulse, pulse);
       } else {
         materialRef.current.emissive.setRGB(0, 0, 0); // Remove o brilho
+      }
+    }
+
+    // Animação de caminhada (perninhas)
+    if (isLocalPlayer && controls && leftLegRef.current && rightLegRef.current) {
+      const isMoving = controls.keys && (controls.keys.w || controls.keys.a || controls.keys.s || controls.keys.d);
+
+      if (isMoving) {
+        walkCycle.current += delta * 8; // Velocidade da caminhada
+
+        // Movimento alternado das pernas
+        const legSwing = Math.sin(walkCycle.current) * 0.5; // Amplitude do balanço
+
+        leftLegRef.current.rotation.x = legSwing;
+        rightLegRef.current.rotation.x = -legSwing; // Invertido
+
+        // Pequeno movimento vertical (bounce)
+        if (meshRef.current) {
+          const bounce = Math.abs(Math.sin(walkCycle.current * 2)) * 0.05;
+          meshRef.current.position.y = 0.5 + bounce;
+        }
+      } else {
+        // Quando parado, volta as pernas para posição neutra suavemente
+        if (leftLegRef.current) leftLegRef.current.rotation.x *= 0.85;
+        if (rightLegRef.current) rightLegRef.current.rotation.x *= 0.85;
+        if (meshRef.current && meshRef.current.position.y > 0.5) {
+          meshRef.current.position.y = THREE.MathUtils.lerp(meshRef.current.position.y, 0.5, 0.1);
+        }
       }
     }
 
@@ -158,77 +190,112 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
 
   return (
     <group ref={meshRef} position={position}>
-      {/* Pernas */}
-      <mesh castShadow position={[-0.12, 0.15 * heightScale, 0]}>
-        <capsuleGeometry args={[0.08, 0.3 * heightScale, 8, 16]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
-      <mesh castShadow position={[0.12, 0.15 * heightScale, 0]}>
-        <capsuleGeometry args={[0.08, 0.3 * heightScale, 8, 16]} />
-        <meshStandardMaterial color={color} />
+      {/* Indicador visual no chão - anel sutil colorido */}
+      <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.28, 0.35, 32]} />
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={0.5}
+          side={2}
+        />
       </mesh>
 
+      {/* Círculo interno brilhante */}
+      <mesh position={[0, 0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.27, 32]} />
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={0.2}
+        />
+      </mesh>
+
+      {/* Pernas com animação - ponto de pivô no topo */}
+      <group ref={leftLegRef} position={[-0.12, 0.35 * heightScale, 0]}>
+        <mesh castShadow position={[0, -0.15 * heightScale, 0]}>
+          <capsuleGeometry args={[0.08, 0.3 * heightScale, 8, 16]} />
+          <meshStandardMaterial color={color} roughness={0.7} />
+        </mesh>
+      </group>
+      <group ref={rightLegRef} position={[0.12, 0.35 * heightScale, 0]}>
+        <mesh castShadow position={[0, -0.15 * heightScale, 0]}>
+          <capsuleGeometry args={[0.08, 0.3 * heightScale, 8, 16]} />
+          <meshStandardMaterial color={color} roughness={0.7} />
+        </mesh>
+      </group>
+
       {/* Torso */}
-      <mesh castShadow position={[0, 0.5 * heightScale, 0]}>
-        <capsuleGeometry args={[0.18, 0.35 * heightScale, 16, 32]} />
-        <meshStandardMaterial ref={materialRef} color={color} />
+      <mesh castShadow position={[0, 0.55 * heightScale, 0]}>
+        <capsuleGeometry args={[0.2, 0.4 * heightScale, 16, 32]} />
+        <meshStandardMaterial ref={materialRef} color={color} roughness={0.7} />
       </mesh>
 
       {/* Braços */}
-      <mesh castShadow position={[-0.25, 0.52 * heightScale, 0]}>
-        <capsuleGeometry args={[0.06, 0.32 * heightScale, 8, 16]} />
-        <meshStandardMaterial color={color} />
+      <mesh castShadow position={[-0.28, 0.57 * heightScale, 0]} rotation={[0, 0, 0.1]}>
+        <capsuleGeometry args={[0.06, 0.35 * heightScale, 8, 16]} />
+        <meshStandardMaterial color={color} roughness={0.7} />
       </mesh>
-      <mesh castShadow position={[0.25, 0.52 * heightScale, 0]}>
-        <capsuleGeometry args={[0.06, 0.32 * heightScale, 8, 16]} />
-        <meshStandardMaterial color={color} />
+      <mesh castShadow position={[0.28, 0.57 * heightScale, 0]} rotation={[0, 0, -0.1]}>
+        <capsuleGeometry args={[0.06, 0.35 * heightScale, 8, 16]} />
+        <meshStandardMaterial color={color} roughness={0.7} />
       </mesh>
 
       {/* Pescoço */}
-      <mesh castShadow position={[0, 0.73 * heightScale, 0]}>
-        <cylinderGeometry args={[0.07, 0.07, 0.1, 16]} />
-        <meshStandardMaterial color={skinColor} />
+      <mesh castShadow position={[0, 0.78 * heightScale, 0]}>
+        <cylinderGeometry args={[0.08, 0.08, 0.12, 16]} />
+        <meshStandardMaterial color={skinColor} roughness={0.6} />
       </mesh>
 
       {/* Cabeça */}
-      <mesh castShadow position={[0, 0.85 * heightScale, 0]}>
-        <sphereGeometry args={[0.15, 32, 32]} />
-        <meshStandardMaterial color={skinColor} />
+      <mesh castShadow position={[0, 0.92 * heightScale, 0]}>
+        <sphereGeometry args={[0.16, 32, 32]} />
+        <meshStandardMaterial color={skinColor} roughness={0.6} />
       </mesh>
 
       {/* Olhos */}
-      <mesh position={[-0.06, 0.87 * heightScale, -0.13]}>
-        <sphereGeometry args={[0.025, 16, 16]} />
+      <mesh position={[-0.07, 0.94 * heightScale, -0.14]}>
+        <sphereGeometry args={[0.03, 16, 16]} />
         <meshBasicMaterial color="#000000" />
       </mesh>
-      <mesh position={[0.06, 0.87 * heightScale, -0.13]}>
-        <sphereGeometry args={[0.025, 16, 16]} />
+      <mesh position={[0.07, 0.94 * heightScale, -0.14]}>
+        <sphereGeometry args={[0.03, 16, 16]} />
         <meshBasicMaterial color="#000000" />
       </mesh>
 
-      {/* Boca */}
-      <mesh position={[0, 0.82 * heightScale, -0.14]}>
-        <sphereGeometry args={[0.02, 16, 16]} />
-        <meshBasicMaterial color="#d4a5a5" />
+      {/* Brilho nos olhos */}
+      <mesh position={[-0.06, 0.95 * heightScale, -0.155]}>
+        <sphereGeometry args={[0.01, 8, 8]} />
+        <meshBasicMaterial color="#ffffff" />
+      </mesh>
+      <mesh position={[0.08, 0.95 * heightScale, -0.155]}>
+        <sphereGeometry args={[0.01, 8, 8]} />
+        <meshBasicMaterial color="#ffffff" />
+      </mesh>
+
+      {/* Boca - sorriso */}
+      <mesh position={[0, 0.88 * heightScale, -0.15]}>
+        <sphereGeometry args={[0.025, 16, 16]} />
+        <meshBasicMaterial color="#ff9999" />
       </mesh>
 
       {/* CABELO - Específico por personagem */}
       {character?.id === 'esther' && (
         <>
           {/* Cabelo castanho claro liso médio */}
-          <mesh castShadow position={[0, 0.95 * heightScale, 0]}>
-            <sphereGeometry args={[0.17, 32, 32]} />
-            <meshStandardMaterial color={hairColor} />
+          <mesh castShadow position={[0, 1.02 * heightScale, 0]}>
+            <sphereGeometry args={[0.18, 32, 32]} />
+            <meshStandardMaterial color={hairColor} roughness={0.8} />
           </mesh>
           {/* Franja */}
-          <mesh castShadow position={[0, 0.88 * heightScale, -0.12]}>
-            <boxGeometry args={[0.28, 0.08, 0.08]} />
-            <meshStandardMaterial color={hairColor} />
+          <mesh castShadow position={[0, 0.95 * heightScale, -0.13]}>
+            <boxGeometry args={[0.3, 0.09, 0.09]} />
+            <meshStandardMaterial color={hairColor} roughness={0.8} />
           </mesh>
           {/* Cabelo nas costas - médio */}
-          <mesh castShadow position={[0, 0.65 * heightScale, 0.13]}>
-            <boxGeometry args={[0.22, 0.35, 0.06]} />
-            <meshStandardMaterial color={hairColor} />
+          <mesh castShadow position={[0, 0.7 * heightScale, 0.14]}>
+            <boxGeometry args={[0.24, 0.4, 0.07]} />
+            <meshStandardMaterial color={hairColor} roughness={0.8} />
           </mesh>
         </>
       )}
@@ -236,27 +303,27 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
       {character?.id === 'elissa' && (
         <>
           {/* Cabelo castanho escuro longo ondulado */}
-          <mesh castShadow position={[0, 0.95 * heightScale, 0]}>
-            <sphereGeometry args={[0.17, 32, 32]} />
-            <meshStandardMaterial color={hairColor} />
+          <mesh castShadow position={[0, 1.02 * heightScale, 0]}>
+            <sphereGeometry args={[0.18, 32, 32]} />
+            <meshStandardMaterial color={hairColor} roughness={0.8} />
           </mesh>
           {/* Franja */}
-          <mesh castShadow position={[0, 0.88 * heightScale, -0.12]}>
-            <boxGeometry args={[0.28, 0.08, 0.08]} />
-            <meshStandardMaterial color={hairColor} />
+          <mesh castShadow position={[0, 0.95 * heightScale, -0.13]}>
+            <boxGeometry args={[0.3, 0.09, 0.09]} />
+            <meshStandardMaterial color={hairColor} roughness={0.8} />
           </mesh>
           {/* Cabelo longo ondulado - efeito com múltiplas camadas */}
-          <mesh castShadow position={[-0.08, 0.50 * heightScale, 0.13]}>
-            <boxGeometry args={[0.08, 0.5, 0.08]} />
-            <meshStandardMaterial color={hairColor} />
+          <mesh castShadow position={[-0.08, 0.55 * heightScale, 0.14]}>
+            <boxGeometry args={[0.09, 0.55, 0.09]} />
+            <meshStandardMaterial color={hairColor} roughness={0.8} />
           </mesh>
-          <mesh castShadow position={[0, 0.48 * heightScale, 0.14]}>
-            <boxGeometry args={[0.12, 0.52, 0.06]} />
-            <meshStandardMaterial color={hairColor} />
+          <mesh castShadow position={[0, 0.53 * heightScale, 0.15]}>
+            <boxGeometry args={[0.13, 0.57, 0.07]} />
+            <meshStandardMaterial color={hairColor} roughness={0.8} />
           </mesh>
-          <mesh castShadow position={[0.08, 0.50 * heightScale, 0.13]}>
-            <boxGeometry args={[0.08, 0.5, 0.08]} />
-            <meshStandardMaterial color={hairColor} />
+          <mesh castShadow position={[0.08, 0.55 * heightScale, 0.14]}>
+            <boxGeometry args={[0.09, 0.55, 0.09]} />
+            <meshStandardMaterial color={hairColor} roughness={0.8} />
           </mesh>
         </>
       )}
@@ -264,28 +331,22 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
       {character?.id === 'evelyn' && (
         <>
           {/* Cabelo castanho claro longo liso */}
-          <mesh castShadow position={[0, 0.95 * heightScale, 0]}>
-            <sphereGeometry args={[0.17, 32, 32]} />
-            <meshStandardMaterial color={hairColor} />
+          <mesh castShadow position={[0, 1.02 * heightScale, 0]}>
+            <sphereGeometry args={[0.18, 32, 32]} />
+            <meshStandardMaterial color={hairColor} roughness={0.8} />
           </mesh>
           {/* Franja */}
-          <mesh castShadow position={[0, 0.88 * heightScale, -0.12]}>
-            <boxGeometry args={[0.28, 0.08, 0.08]} />
-            <meshStandardMaterial color={hairColor} />
+          <mesh castShadow position={[0, 0.95 * heightScale, -0.13]}>
+            <boxGeometry args={[0.3, 0.09, 0.09]} />
+            <meshStandardMaterial color={hairColor} roughness={0.8} />
           </mesh>
           {/* Cabelo longo liso - uma peça só */}
-          <mesh castShadow position={[0, 0.48 * heightScale, 0.14]}>
-            <boxGeometry args={[0.24, 0.55, 0.06]} />
-            <meshStandardMaterial color={hairColor} />
+          <mesh castShadow position={[0, 0.53 * heightScale, 0.15]}>
+            <boxGeometry args={[0.26, 0.6, 0.07]} />
+            <meshStandardMaterial color={hairColor} roughness={0.8} />
           </mesh>
         </>
       )}
-
-      {/* Indicador de direção (na frente do rosto) */}
-      <mesh position={[0, 0.5 * heightScale, -0.4]} castShadow>
-        <coneGeometry args={[0.1, 0.2, 8]} />
-        <meshStandardMaterial color="#ffffff" opacity={0.5} transparent />
-      </mesh>
 
       {/* Efeito de ataque */}
       {showAttackEffect && meshRef.current && (

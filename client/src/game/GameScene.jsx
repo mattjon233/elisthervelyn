@@ -29,9 +29,9 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange 
   useFrame(({ clock }) => {
     if (directionalLightRef.current) {
       const time = clock.getElapsedTime();
-      // Movimento circular lento do sol para girar as sombras
-      const x = 50 * Math.cos(time * 0.05);
-      const z = 50 * Math.sin(time * 0.05);
+      // Movimento circular lento do sol para girar as sombras suavemente
+      const x = 10 * Math.cos(time * 0.02);
+      const z = 10 * Math.sin(time * 0.02);
       directionalLightRef.current.position.x = x;
       directionalLightRef.current.position.z = z;
     }
@@ -314,8 +314,8 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange 
       localPlayerRef.current.position.z += pushZ;
     }
 
-    // Garante que o jogador fique no chão
-    localPlayerRef.current.position.y = 0.5;
+    // Garante que o jogador fique no chão (mas permite pequeno bounce da caminhada)
+    // Não fazer nada aqui - a altura é controlada pelo usePlayerControls
 
     // Limpeza de instâncias de habilidades que já terminaram
     const activeInstanceIds = new Set(activeAbilities.map(a => a.instanceId));
@@ -337,20 +337,22 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange 
   return (
     <>
       {/* Iluminação Aprimorada */}
-      <ambientLight intensity={0.7} />
+      <ambientLight intensity={0.8} />
       <directionalLight
         ref={directionalLightRef}
-        position={[50, 50, 25]} // Posição inicial do sol
-        intensity={1.5}
+        position={[10, 50, 10]} // Sol bem alto e mais próximo
+        intensity={2.0}
         castShadow
-        shadow-mapSize-width={4096} // Resolução da sombra maior
-        shadow-mapSize-height={4096}
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
         shadow-camera-near={0.5}
-        shadow-camera-far={150}
-        shadow-camera-left={-64}
-        shadow-camera-right={64}
-        shadow-camera-top={64}
-        shadow-camera-bottom={-64}
+        shadow-camera-far={100}
+        shadow-camera-left={-50}
+        shadow-camera-right={50}
+        shadow-camera-top={50}
+        shadow-camera-bottom={-50}
+        shadow-bias={-0.00005} // Sombra mais próxima do objeto
+        shadow-normalBias={0.02}
       />
 
       {/* Céu */}
@@ -433,7 +435,7 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange 
         <Player
           key={player.id}
           character={player.stats} // Os stats do personagem estão aqui
-          position={[player.position?.x || 0, 0.5, player.position?.z || 0]}
+          position={[player.position?.x || 0, player.position?.y || 0.5, player.position?.z || 0]}
           isLocalPlayer={false}
         />
       ))}

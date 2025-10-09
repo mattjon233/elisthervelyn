@@ -3,6 +3,8 @@ import { create } from 'zustand';
 export const useShopStore = create((set) => ({
   isShopOpen: false,
   hasUsedFreeUpgrade: false,
+  hasReceivedFreePotion: false,
+  potion: null, // Poção atual do jogador
   upgrades: {
     healCooldown: false,
     healAmount: false,
@@ -23,4 +25,13 @@ export const useShopStore = create((set) => ({
       hasUsedFreeUpgrade: true,
     };
   }),
+
+  // Adicionar poção ao inventário
+  addPotion: (potion) => set({ potion }),
+
+  // Usar poção (remove do inventário)
+  usePotion: () => set({ potion: null }),
+
+  // Marcar que recebeu poção grátis
+  setReceivedFreePotion: () => set({ hasReceivedFreePotion: true }),
 }));
