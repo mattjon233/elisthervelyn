@@ -164,6 +164,9 @@ export class GameService {
     const delta = 0.2; // Corresponde ao intervalo do loop (200ms)
 
     enemies.forEach(enemy => {
+      // VERIFICAÇÃO CRÍTICA: Inimigos mortos não podem se mover nem atacar
+      if (enemy.health <= 0) return;
+
       // Encontra o jogador mais próximo
       let nearestPlayer = null;
       let minDistance = Infinity;
