@@ -1,7 +1,8 @@
 .mission-ui {
   position: fixed;
   top: 20px;
-  right: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   width: 320px;
   background: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(10px);
@@ -14,13 +15,49 @@
   z-index: 100;
 }
 
+.mission-ui.minimized {
+  width: auto; /* Encolhe para o tamanho do conteúdo */
+  padding: 8px 15px;
+  cursor: pointer;
+}
+
 .mission-header {
   display: flex;
+  justify-content: space-between; /* Espaça o título e o ícone */
   align-items: center;
   gap: 10px;
   margin-bottom: 12px;
   padding-bottom: 10px;
   border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+  cursor: pointer; /* Indica que é clicável */
+  user-select: none; /* Impede a seleção de texto */
+}
+
+.mission-ui.minimized .mission-header {
+  margin-bottom: 0;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.mission-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.minimize-icon {
+  font-size: 14px;
+  font-weight: bold;
+  color: #FFD700;
+}
+
+.mission-body {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .mission-icon {

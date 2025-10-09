@@ -197,8 +197,9 @@ export class GameController {
 
     socket.emit('game_started', {
       mission: missionData,
-      players: room.players
-      // Diálogos podem ser omitidos para quem entra depois, ou enviados se necessário
+      players: room.players,
+      enemies: room.enemies, // Envia inimigos para jogadores que entram depois
+      npcs: room.npcs,       // Envia NPCs para jogadores que entram depois
     });
 
     console.log(`[GameController] Enviando dados de jogo em andamento para ${socket.id} na sala ${room.id}`);
