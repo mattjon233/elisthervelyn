@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { useShopStore } from '../../store/shopStore';
+import socketService from '../../services/socket';
 
 /**
  * Hook para controlar movimento do personagem
@@ -15,7 +17,7 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
     space: false,
     attack: false, // Ataque (clique do mouse ou tecla)
     ability: false, // Habilidade especial (Q)
-    potion: false, // Usar poção (1)
+    potion: false, // Usar poção (C)
   });
 
   const moveDirection = useRef(new THREE.Vector3());
@@ -32,8 +34,8 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
       if (isDead) return; // Não aceitar input se morto
 
       const key = e.key.toLowerCase();
-      // Inclui 'q' para habilidade e '1' para poção
-      if (['w', 'a', 's', 'd', ' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'f', 'j', 'q', '1'].includes(key)) {
+      // Inclui 'q' para habilidade e 'c' para poção
+      if (['w', 'a', 's', 'd', ' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'f', 'j', 'q', 'c'].includes(key)) {
         e.preventDefault();
 
         setKeys((prev) => ({
@@ -45,7 +47,7 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
           space: prev.space || key === ' ',
           attack: prev.attack || key === 'f' || key === 'j',
           ability: prev.ability || key === 'q', // Habilidade com Q
-          potion: prev.potion || key === '1', // Poção com 1
+          potion: prev.potion || key === 'c', // Poção com C
         }));
       }
     };
@@ -61,7 +63,7 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
         space: prev.space && key !== ' ',
         attack: prev.attack && key !== 'f' && key !== 'j',
         ability: prev.ability && key !== 'q',
-        potion: prev.potion && key !== '1',
+        potion: prev.potion && key !== 'c',
       }));
     };
 
@@ -114,6 +116,23 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
       window.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isDead]);
+
+  // Lógica para usar poção
+  const { potion, usePotion } = useShopStore();
+  useEffect(() => {
+    // Usa a poção apenas uma vez quando a tecla é pressionada
+    if (keys.potion) {
+      if (potion && !isDead) {
+        console.log('💊 Usando poção...');
+        socketService.emit('use_potion');
+        usePotion(); // Remove da store local imediatamente
+      } else if (!potion && !isDead) {
+        console.log('❌ Você não tem nenhuma poção!');
+      }
+      // Reseta o estado da tecla para evitar uso contínuo
+      setKeys((prev) => ({ ...prev, potion: false }));
+    }
+  }, [keys.potion, potion, isDead, usePotion]);
 
   // Atualizar movimento a cada frame
   useFrame((state, delta) => {
@@ -317,6 +336,35 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
         playerRef.current.position.z = stairZ + stairDepth / 2 + playerRadius;
       }
     }
+
+    // --- COLISÃO COM OBJETOS DO CENÁRIO ---
+    const obstacles = [
+      // Árvores (posições de Ground.jsx)
+      { x: 10, z: -10, radius: 1.5 },
+      { x: -12, z: -8, radius: 1.2 },
+      { x: 15, z: 5, radius: 1.8 },
+      { x: -10, z: 8, radius: 1.3 },
+      { x: 8, z: 12, radius: 1.4 },
+      { x: -15, z: -15, radius: 1.6 },
+      // Rochas (posições de Ground.jsx)
+      { x: -5, z: -12, radius: 1.2 },
+      { x: 12, z: -5, radius: 0.9 },
+      { x: -8, z: 10, radius: 1.1 },
+      { x: 5, z: 15, radius: 0.9 },
+      { x: 18, z: -12, radius: 1.2 },
+    ];
+
+    obstacles.forEach(obstacle => {
+      const dx = playerRef.current.position.x - obstacle.x;
+      const dz = playerRef.current.position.z - obstacle.z;
+      const distance = Math.sqrt(dx * dx + dz * dz);
+
+      if (distance < obstacle.radius + playerRadius) {
+        const angle = Math.atan2(dz, dx);
+        playerRef.current.position.x = obstacle.x + Math.cos(angle) * (obstacle.radius + playerRadius);
+        playerRef.current.position.z = obstacle.z + Math.sin(angle) * (obstacle.radius + playerRadius);
+      }
+    });
   });
 
   // Detectar ataque

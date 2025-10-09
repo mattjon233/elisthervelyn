@@ -80,15 +80,22 @@ function TiaRose({ playerPosition = [0, 0, 0] }) {
   }, []);
 
   const handleInteraction = () => {
-    if (!hasVisited) {
-      setHasVisited(true);
-      setSpeechText('Olá, minhas queridas guerreiras! Eu sou a Tia Rose! A primeira poção é cortesia!');
-      setTimeout(() => setSpeechText(''), 5000);
+    // Se o jogador já tem uma poção, não faz nada
+    if (potion) {
+      setSpeechText('Você já tem uma poção! Use-a antes de comprar outra.');
+      setTimeout(() => setSpeechText(''), 4000);
       return;
     }
 
-    // Comprar poção
-    socketService.emit('buy_potion', { potionId: 'health_potion' });
+    // Na primeira visita, dá a poção de cortesia imediatamente
+    if (!hasReceivedFreePotion) {
+      setSpeechText('Olá, minhas queridas guerreiras! A primeira poção é cortesia da casa!');
+      socketService.emit('buy_potion', { potionId: 'health_potion' });
+    } else {
+      // Lógica para comprar poção com ouro
+      setSpeechText('Precisa de mais uma poção, querida?');
+      socketService.emit('buy_potion', { potionId: 'health_potion' });
+    }
   };
 
   // Atualizar balão de fala quando jogador se aproxima

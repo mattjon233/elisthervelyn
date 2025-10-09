@@ -8,10 +8,9 @@ import { useShopStore } from '../store/shopStore';
 import { usePrevious } from '../game/hooks/usePrevious';
 
 function GameUI({ character, killCount = 0, abilityState }) {
-  const { players, playerId, currentDialogue, currentMission, triggerDamageEffect, triggerHealEffect } = useGameStore();
-  const { teamGold } = useMissionStore();
+  const { players, playerId, currentDialogue, triggerDamageEffect, triggerHealEffect } = useGameStore();
+  const { teamGold, activeMission } = useMissionStore();
   const { potion } = useShopStore();
-  const [mission, setMission] = useState('Aguardando missão...');
 
   // Encontra os dados do jogador local na lista de jogadores
   const localPlayer = players.find(p => p.id === playerId);
@@ -32,16 +31,8 @@ function GameUI({ character, killCount = 0, abilityState }) {
     }
   }, [health, prevHealth, triggerDamageEffect, triggerHealEffect]);
 
-  useEffect(() => {
-    if (currentMission) {
-      setMission(currentMission.descricao || 'Em missão');
-    }
-  }, [currentMission]);
-
   const handleJoystickMove = ({ x, y }) => {
     // Movimento será tratado pelo hook usePlayerControls
-    // Por enquanto só log (integração futura)
-    // console.log('Joystick:', x, y);
   };
 
   const handleAttack = () => {
@@ -72,12 +63,10 @@ function GameUI({ character, killCount = 0, abilityState }) {
   };
 
   const handleRotateLeft = () => {
-    // Simular pressionamento da tecla Z
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', bubbles: true }));
   };
 
   const handleRotateRight = () => {
-    // Simular pressionamento da tecla X
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'x', bubbles: true }));
   };
 
@@ -99,7 +88,7 @@ function GameUI({ character, killCount = 0, abilityState }) {
 
         {/* Widget de Missão e Kills */}
         <div className="hud-widget mission-info-widget">
-          <div className="mission-text">{mission}</div>
+          <div className="mission-text">{activeMission ? activeMission.title : 'Aguardando missão...'}</div>
           <div className="stats-row">
             <div className="kill-counter">
               💀 {killCount}
@@ -107,15 +96,6 @@ function GameUI({ character, killCount = 0, abilityState }) {
             <div className="gold-counter">
               💰 {teamGold} Ouro
             </div>
-          </div>
-        </div>
-
-        {/* Widget de Poção */}
-        <div className={`hud-widget potion-widget ${potion ? 'has-potion' : 'no-potion'}`}>
-          <div className="potion-icon">💊</div>
-          <div className="potion-info">
-            <div className="potion-label">Poção [1]</div>
-            <div className="potion-status">{potion ? 'Disponível' : 'Sem poção'}</div>
           </div>
         </div>
       </div>
@@ -135,6 +115,14 @@ function GameUI({ character, killCount = 0, abilityState }) {
           onAttack={handleAttack}
           onSpecial={handleSpecial}
         />
+      </div>
+
+      <div className="hud-bottom-right">
+        {/* Poção à esquerda da habilidade Q */}
+        <div className={`hud-widget potion-widget ${potion ? 'has-potion' : 'no-potion'}`}>
+          <div className="potion-icon">💊</div>
+          <div className="potion-key">C</div>
+        </div>
         <AbilityCooldown character={character} abilityState={abilityState} />
       </div>
 

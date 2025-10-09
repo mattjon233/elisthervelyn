@@ -99,27 +99,65 @@
 }
 
 /* --- Widget de Poção --- */
+/* --- Controles Touch (Joystick) --- */
+.touch-controls {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+  display: flex;
+  justify-content: flex-start; /* Apenas o joystick aqui */
+  align-items: flex-end;
+  pointer-events: all;
+}
+
+/* --- HUD Inferior Direito (Habilidades e Poção) --- */
+.hud-bottom-right {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  align-items: flex-end; /* Alinha os itens pela base */
+  gap: 15px; /* Espaço entre a poção e a habilidade */
+  pointer-events: all;
+}
+
+/* --- Widget de Poção (versão ícone) --- */
 .potion-widget {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 10px 15px;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(20, 20, 30, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
 }
 
 .potion-widget.has-potion {
-  background: rgba(255, 20, 147, 0.15);
-  border-color: rgba(255, 20, 147, 0.5);
-  box-shadow: 0 0 15px rgba(255, 20, 147, 0.3);
+  border-color: rgba(255, 20, 147, 0.7);
+  box-shadow: 0 0 15px rgba(255, 20, 147, 0.4);
 }
 
 .potion-widget.no-potion {
-  opacity: 0.5;
+  opacity: 0.4;
+  background: rgba(0, 0, 0, 0.5);
 }
 
 .potion-icon {
-  font-size: 32px;
+  font-size: 24px;
+  line-height: 1;
   animation: potionPulse 2s ease-in-out infinite;
+}
+
+.potion-key {
+  font-size: 12px;
+  font-weight: bold;
+  color: white;
+  margin-top: 2px;
 }
 
 @keyframes potionPulse {
@@ -127,98 +165,10 @@
   50% { transform: scale(1.1); }
 }
 
-.potion-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.potion-label {
-  font-size: 12px;
-  font-weight: bold;
-  color: #FFB6D9;
-}
-
-.potion-status {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.8);
-}
-
 .mission-text {
   font-size: 14px;
   font-weight: normal;
   max-width: 300px;
-}
-
-.stats-row {
-  display: flex;
-  gap: 20px;
-  align-items: center;
-}
-
-.kill-counter {
-  font-size: 18px;
-  font-weight: bold;
-  color: #FF6B6B;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.gold-counter {
-  font-size: 18px;
-  font-weight: bold;
-  color: #FFD700;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-/* --- Diálogo --- */
-.dialogue-box {
-  position: absolute;
-  bottom: 15%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 90%;
-  max-width: 700px;
-  padding: 20px;
-  background: rgba(20, 20, 30, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  animation: slideUp 0.4s ease-out;
-}
-
-@keyframes slideUp {
-  from { opacity: 0; transform: translate(-50%, 20px); }
-  to { opacity: 1; transform: translate(-50%, 0); }
-}
-
-.dialogue-speaker {
-  font-size: 16px;
-  font-weight: bold;
-  color: #ffd700;
-  margin-bottom: 10px;
-}
-
-.dialogue-text {
-  font-size: 18px;
-  line-height: 1.6;
-}
-
-/* --- Controles Touch --- */
-.touch-controls {
-  position: absolute;
-  bottom: 20px;
-  left: 20px;
-  right: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  pointer-events: all;
 }
 
 /* --- Controles de Câmera --- */

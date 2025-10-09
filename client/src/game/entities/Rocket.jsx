@@ -9,7 +9,7 @@ import CooldownTimer from '../../components/CooldownTimer';
 /**
  * Rocket - Cachorro NPC de suporte
  */
-function Rocket({ position = [32, 0, 32], playerPositions = [] }) {
+function Rocket({ position = [32, 0, 32], playerPositions = [], isPlayerDead = false }) {
   const meshRef = useRef();
   const speed = 3.5;
   const followDistance = 3;
@@ -23,7 +23,10 @@ function Rocket({ position = [32, 0, 32], playerPositions = [] }) {
   const healPlayer = useGameStore((state) => state.healPlayer);
 
   useFrame((state, delta) => {
-    if (!meshRef.current || playerPositions.length === 0) return;
+    if (!meshRef.current || playerPositions.length === 0 || isPlayerDead) {
+      setCooldownRemaining(0); // Reseta o cooldown se o jogador morrer
+      return;
+    }
 
     const rocket = meshRef.current;
     const currentTime = Date.now();
@@ -93,10 +96,12 @@ function Rocket({ position = [32, 0, 32], playerPositions = [] }) {
 
   return (
     <group ref={meshRef} position={position}>
-      {/* Indicador de Cooldown */}
-      <Html position={[0, 1.2, 0]} center>
-        <CooldownTimer remainingTime={cooldownRemaining} duration={healInterval / 1000} />
-      </Html>
+      {/* Indicador de Cooldown (só aparece se o jogador estiver vivo) */}
+      {!isPlayerDead && (
+        <Html position={[0, 1.2, 0]} center>
+          <CooldownTimer remainingTime={cooldownRemaining} duration={healInterval / 1000} />
+        </Html>
+      )}
 
       {/* Corpo do cachorro */}
       <mesh castShadow>
