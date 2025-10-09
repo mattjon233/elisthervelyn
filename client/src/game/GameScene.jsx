@@ -22,6 +22,19 @@ import { usePrevious } from './hooks/usePrevious';
 function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange }) {
 
   const localPlayerRef = useRef();
+  const directionalLightRef = useRef();
+
+  // Animação do sol
+  useFrame(({ clock }) => {
+    if (directionalLightRef.current) {
+      const time = clock.getElapsedTime();
+      // Movimento circular lento do sol para girar as sombras
+      const x = 50 * Math.cos(time * 0.05);
+      const z = 50 * Math.sin(time * 0.05);
+      directionalLightRef.current.position.x = x;
+      directionalLightRef.current.position.z = z;
+    }
+  });
 
   const playerControlsRef = useRef(null);
 
@@ -305,13 +318,21 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange 
 
   return (
     <>
-      {/* Iluminação */}
-      <ambientLight intensity={0.6} />
+      {/* Iluminação Aprimorada */}
+      <ambientLight intensity={0.7} />
       <directionalLight
-        position={[10, 20, 10]}
-        intensity={1}
+        ref={directionalLightRef}
+        position={[50, 50, 25]} // Posição inicial do sol
+        intensity={1.5}
         castShadow
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize-width={4096} // Resolução da sombra maior
+        shadow-mapSize-height={4096}
+        shadow-camera-near={0.5}
+        shadow-camera-far={150}
+        shadow-camera-left={-64}
+        shadow-camera-right={64}
+        shadow-camera-top={64}
+        shadow-camera-bottom={-64}
       />
 
       {/* Céu */}
