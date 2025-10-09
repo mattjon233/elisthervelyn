@@ -35,8 +35,6 @@ export const useGameStore = create((set, get) => ({
   bossData: null,
 
   // UI
-  healthBar: 100,
-  maxHealth: 100,
   showControls: true,
   isDead: false,
   lastDamageTime: null,
@@ -56,7 +54,28 @@ export const useGameStore = create((set, get) => ({
 
   setPlayerData: (data) => set({ playerData: data }),
 
-  setPlayers: (players) => set({ players }),
+  setPlayers: (players) => set((state) => {
+    const maxHealthByCharacter = {
+      esther: 100,
+      elissa: 150,
+      evelyn: 80,
+    };
+
+    const initializedPlayers = players.map(p => {
+      // If health is not provided, initialize it.
+      if (p.health === undefined || p.health === null) {
+        const maxHealth = maxHealthByCharacter[p.character] || 100;
+        return {
+          ...p,
+          health: maxHealth,
+          maxHealth: maxHealth,
+        };
+      }
+      return p;
+    });
+
+    return { players: initializedPlayers };
+  }),
 
   addPlayer: (player) => set((state) => ({
     players: [...state.players, player]
@@ -123,31 +142,52 @@ export const useGameStore = create((set, get) => ({
 
   setBossData: (data) => set({ bossData: data }),
 
-  setHealth: (health) => set({ healthBar: health }),
-
-  setMaxHealth: (maxHealth) => set({ maxHealth }),
-
   damagePlayer: (damage) => set((state) => {
-    const newHealth = Math.max(0, state.healthBar - damage);
+    const player = state.players.find(p => p.id === state.playerId);
+    if (!player) return {};
+
+    const newHealth = Math.max(0, player.health - damage);
+
     return {
-      healthBar: newHealth,
+      players: state.players.map(p =>
+        p.id === state.playerId ? { ...p, health: newHealth } : p
+      ),
       isDead: newHealth <= 0,
-      lastDamageTime: Date.now()
+      lastDamageTime: Date.now(),
     };
   }),
 
-  healPlayer: (amount) => set((state) => ({
-    healthBar: Math.min(state.maxHealth, state.healthBar + amount),
-    lastHealTime: Date.now()
-  })),
+  healPlayer: (amount) => set((state) => {
+    const player = state.players.find(p => p.id === state.playerId);
+    // Se o jogador não for encontrado ou já estiver com a vida cheia, não faz nada.
+    if (!player || player.health >= player.maxHealth) {
+      return {};
+    }
+
+    const newHealth = Math.min(player.maxHealth, player.health + amount);
+
+    return {
+      players: state.players.map(p =>
+        p.id === state.playerId ? { ...p, health: newHealth } : p
+      ),
+      lastHealTime: Date.now()
+    };
+  }),
 
   setDead: (dead) => set({ isDead: dead }),
 
-  respawnPlayer: () => set((state) => ({
-    healthBar: state.maxHealth,
-    isDead: false,
-    lastDamageTime: null
-  })),
+  respawnPlayer: () => set((state) => {
+    const player = state.players.find(p => p.id === state.playerId);
+    if (!player) return {};
+
+    return {
+      players: state.players.map(p =>
+        p.id === state.playerId ? { ...p, health: p.maxHealth } : p
+      ),
+      isDead: false,
+      lastDamageTime: null
+    };
+  }),
 
   resetGame: () => set({
     gameStarted: false,
@@ -156,6 +196,5 @@ export const useGameStore = create((set, get) => ({
     enemies: [],
     bossActive: false,
     bossData: null,
-    healthBar: 100
   })
 }));

@@ -14,7 +14,7 @@ function Game({ roomData }) {
   const [killCount, setKillCount] = useState(0);
   const [abilityState, setAbilityState] = useState(null);
   const [healAmount, setHealAmount] = useState(5);
-  const { players, playerId, isDead, lastDamageTime, lastHealTime, respawnPlayer, setMaxHealth, setDead } = useGameStore();
+  const { players, playerId, isDead, lastDamageTime, lastHealTime, respawnPlayer, setDead } = useGameStore();
 
   const localPlayer = players.find(p => p.id === playerId);
   const prevPlayerState = usePrevious(localPlayer);
@@ -44,17 +44,6 @@ function Game({ roomData }) {
       setDead(false);
     }
   }, [localPlayer, prevPlayerState, isDead, setDead]);
-
-  useEffect(() => {
-    // Configurar vida máxima baseada no personagem
-    const maxHealthByCharacter = {
-      esther: 100,
-      elissa: 150,
-      evelyn: 80
-    };
-    const maxHp = maxHealthByCharacter[roomData?.character?.id] || 100;
-    setMaxHealth(maxHp);
-  }, [roomData, setMaxHealth]);
 
   return (
     <div className="game-container">

@@ -4,12 +4,13 @@ import * as THREE from 'three';
 import { Html } from '@react-three/drei';
 import { useGameStore } from '../../store/gameStore';
 import soundService from '../../services/soundService';
+import socketService from '../../services/socket';
 import CooldownTimer from '../../components/CooldownTimer';
 
 /**
  * Rocket - Cachorro NPC de suporte
  */
-function Rocket({ position = [32, 0, 32], playerPositions = [], isPlayerDead = false }) {
+function Rocket({ position = [32, 0, 32] }) {
   const meshRef = useRef();
   const speed = 3.5;
   const followDistance = 3;
@@ -20,11 +21,14 @@ function Rocket({ position = [32, 0, 32], playerPositions = [], isPlayerDead = f
 
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
 
-  const healPlayer = useGameStore((state) => state.healPlayer);
+  const players = useGameStore((state) => state.players);
+  const playerId = useGameStore((state) => state.playerId);
 
   useFrame((state, delta) => {
-    if (!meshRef.current || playerPositions.length === 0 || isPlayerDead) {
-      setCooldownRemaining(0); // Reseta o cooldown se o jogador morrer
+    const playerPositions = players.map(p => p.position).filter(Boolean);
+
+    if (!meshRef.current || playerPositions.length === 0) {
+      setCooldownRemaining(0);
       return;
     }
 
@@ -73,35 +77,40 @@ function Rocket({ position = [32, 0, 32], playerPositions = [], isPlayerDead = f
     }
 
     // --- SISTEMA DE CURA ---
-    if (currentTime - lastHealTime.current >= healInterval) {
+    // Apenas o "host" (primeiro jogador da lista) deve executar a lógica de cura da área
+    // para evitar que múltiplos clientes enviem os mesmos eventos de cura.
+    const isHost = players.length > 0 && players[0].id === playerId;
+
+    if (isHost && currentTime - lastHealTime.current >= healInterval) {
       lastHealTime.current = currentTime;
 
-      const { healthBar, maxHealth, isDead } = useGameStore.getState();
-      if (isDead || healthBar >= maxHealth) return;
+      const rocketPos = new THREE.Vector3(meshRef.current.position.x, 0, meshRef.current.position.z);
 
-      const isPlayerNearby = playerPositions.some(playerPos => {
-        const rocketPos = new THREE.Vector3(rocket.position.x, 0, rocket.position.z);
-        const targetPos = new THREE.Vector3(playerPos.x, 0, playerPos.z);
-        return rocketPos.distanceTo(targetPos) <= buffRadius;
+      const playersToHeal = players.filter(player => {
+        if (!player.position || player.health <= 0) return false; // Não curar jogadores mortos
+        const playerPos = new THREE.Vector3(player.position.x, 0, player.position.z);
+        return rocketPos.distanceTo(playerPos) <= buffRadius;
       });
 
-      if (isPlayerNearby) {
-        healPlayer(healAmount);
+      if (playersToHeal.length > 0) {
+        playersToHeal.forEach(player => {
+          console.log(`🐕 Rocket (host) curando ${player.id} em +${healAmount} HP!`);
+          socketService.emit('player_heal_area', {
+            targetId: player.id,
+            amount: healAmount
+          });
+        });
         soundService.playHealSound();
-        const newHealth = Math.min(maxHealth, healthBar + healAmount);
-        console.log(`🐕 Rocket curou +${healAmount} HP! Vida atual: ${newHealth}/${maxHealth}`);
       }
     }
   });
 
   return (
     <group ref={meshRef} position={position}>
-      {/* Indicador de Cooldown (só aparece se o jogador estiver vivo) */}
-      {!isPlayerDead && (
-        <Html position={[0, 1.2, 0]} center>
-          <CooldownTimer remainingTime={cooldownRemaining} duration={healInterval / 1000} />
-        </Html>
-      )}
+      {/* Indicador de Cooldown */}
+      <Html position={[0, 1.2, 0]} center>
+        <CooldownTimer remainingTime={cooldownRemaining} duration={healInterval / 1000} />
+      </Html>
 
       {/* Corpo do cachorro */}
       <mesh castShadow>

@@ -370,8 +370,6 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange 
           return (
             <Rocket
               key={npc.id}
-              playerPositions={playerPositions}
-              isPlayerDead={isDead}
             />
           );
         }

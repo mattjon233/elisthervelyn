@@ -13,8 +13,7 @@ function Zombie({ id, position = [0, 0, 0], health = 30, maxHealth = 30 }) {
   const healthPercent = Math.round((health / maxHealth) * 100);
 
   // DEBUG: Verificar as props de vida recebidas
-  console.log(`Zumbi ${id} - Health: ${health}/${maxHealth} (${healthPercent}%)`);
-
+  
   // Billboard effect - fazer a barra de HP sempre olhar para a câmera
   useFrame(({ camera }) => {
     if (healthBarRef.current) {
