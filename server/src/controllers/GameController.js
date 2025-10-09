@@ -334,6 +334,28 @@ export class GameController {
   }
 
   /**
+   * Cura em área (habilidade Esther)
+   */
+  handlePlayerHealArea(socket, { targetId, amount }) {
+    const roomId = this.playerRooms.get(socket.id);
+    const room = this.rooms.get(roomId);
+    if (!room || !room.gameStarted) return;
+
+    const targetPlayer = room.players.find(p => p.id === targetId);
+    if (!targetPlayer) return;
+
+    // Aplica a cura sem ultrapassar o máximo
+    const oldHealth = targetPlayer.health;
+    targetPlayer.health = Math.min(targetPlayer.maxHealth, targetPlayer.health + amount);
+    const actualHeal = targetPlayer.health - oldHealth;
+
+    console.log(`SERVER: ${socket.id} curou ${targetId} em ${actualHeal} HP (${oldHealth} -> ${targetPlayer.health})`);
+
+    // Broadcast do novo estado para todos
+    this.io.to(roomId).emit('game_state_updated', { enemies: room.enemies, players: room.players });
+  }
+
+  /**
    * Aceitar missão (colaborativa)
    */
   handleMissionAccept(socket, { missionId }) {

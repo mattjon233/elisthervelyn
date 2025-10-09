@@ -46,6 +46,7 @@ io.on('connection', (socket) => {
   socket.on('player_attack', (data) => gameController.handlePlayerAttack(socket, data));
   socket.on('player_special', (data) => gameController.handlePlayerSpecial(socket, data));
   socket.on('player_heal', (data) => gameController.handlePlayerHeal(socket, data));
+  socket.on('player_heal_area', (data) => gameController.handlePlayerHealArea(socket, data));
   socket.on('request_respawn', () => gameController.handlePlayerRespawn(socket));
 
   // Missões colaborativas

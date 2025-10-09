@@ -13,10 +13,23 @@ import './Game.css';
 function Game({ roomData }) {
   const [killCount, setKillCount] = useState(0);
   const [abilityState, setAbilityState] = useState(null);
+  const [healAmount, setHealAmount] = useState(5);
   const { players, playerId, isDead, lastDamageTime, lastHealTime, respawnPlayer, setMaxHealth, setDead } = useGameStore();
 
   const localPlayer = players.find(p => p.id === playerId);
   const prevPlayerState = usePrevious(localPlayer);
+
+  // Rastrear mudanças de HP para calcular cura
+  useEffect(() => {
+    if (!localPlayer || !prevPlayerState) return;
+
+    const healthDiff = localPlayer.health - prevPlayerState.health;
+
+    // Se ganhou HP, atualizar quantidade de cura
+    if (healthDiff > 0) {
+      setHealAmount(healthDiff);
+    }
+  }, [localPlayer, prevPlayerState]);
 
   // Efeito para detectar morte e respawn
   useEffect(() => {
@@ -62,7 +75,7 @@ function Game({ roomData }) {
       <DamageOverlay lastDamage={lastDamageTime} />
 
       {/* Efeito de cura (partículas verdes) */}
-      <HealEffect lastHeal={lastHealTime} amount={5} />
+      <HealEffect lastHeal={lastHealTime} amount={healAmount} />
 
       {/* UI 2D sobreposta */}
       <GameUI

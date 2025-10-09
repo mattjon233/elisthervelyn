@@ -122,6 +122,12 @@ export class GameService {
     const target = enemies.find(e => e.id === targetId);
     if (!target || target.health <= 0) return;
 
+    // Rocket é imortal e não pode ser atacado
+    if (target.type === 'rocket') {
+      console.log(`SERVER: Rocket não pode ser atacado! Ignorando dano.`);
+      return;
+    }
+
     // Auto ataque sempre dá 10 de dano para todos os personagens
     const AUTO_ATTACK_DAMAGE = 10;
 

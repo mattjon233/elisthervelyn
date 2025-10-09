@@ -196,11 +196,27 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange 
               socketService.sendAttack(enemyIds, ability.damage);
             }
 
-            // Aplica cura no jogador (apenas uma vez por habilidade)
+            // Aplica cura em área para todas as jogadoras (apenas uma vez por habilidade)
             if (!hitSet.has('heal_applied')) {
               hitSet.add('heal_applied');
-              console.log(`💚 Explosão de Luz curou ${ability.heal} HP!`);
-              socketService.sendHeal(ability.heal);
+
+              // Curar todas as jogadoras em área (incluindo quem usou)
+              const playersInRange = players.filter(player => {
+                if (!player.position) return false;
+                const dx = player.position.x - playerPos.x;
+                const dz = player.position.z - playerPos.z;
+                const distance = Math.sqrt(dx * dx + dz * dz);
+                return distance <= ability.range;
+              });
+
+              // Enviar cura para cada jogadora em área
+              playersInRange.forEach(player => {
+                console.log(`💚 Explosão de Luz curou ${player.id} em ${ability.heal} HP!`);
+                socketService.emit('player_heal_area', {
+                  targetId: player.id,
+                  amount: ability.heal
+                });
+              });
             }
           }
           break;
