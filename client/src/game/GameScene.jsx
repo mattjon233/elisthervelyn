@@ -11,6 +11,7 @@ import Zombie from './entities/Zombie';
 import Ghost from './entities/Ghost';
 import Rocket from './entities/Rocket';
 import DeathAnimation from './entities/DeathAnimation';
+import TioUncle from './entities/TioUncle';
 import { useGameStore } from '../store/gameStore';
 import { useMissionStore } from '../store/missionStore';
 import { useShopStore } from '../store/shopStore';
@@ -57,6 +58,9 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange 
 
   const { players, playerId, enemies, npcs, updatePlayerMovement } = useGameStore();
   const { potion, usePotion } = useShopStore();
+
+  // Posição fixa do Tio Uncle
+  const tioUnclePosition = [45, 0, -45];
 
   // Listener para movimento de jogadores remotos
   useEffect(() => {
@@ -296,6 +300,20 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange 
       }
     });
 
+    // Lógica de colisão com Tio Uncle
+    const tioUncleDx = tioUnclePosition[0] - playerPos.x;
+    const tioUncleDz = tioUnclePosition[2] - playerPos.z;
+    const tioUncleDistance = Math.sqrt(tioUncleDx * tioUncleDx + tioUncleDz * tioUncleDz);
+    const tioUncleCollisionRadius = 1.2; // Raio de colisão maior para NPC
+
+    if (tioUncleDistance < tioUncleCollisionRadius && tioUncleDistance > 0.01) {
+      const pushStrength = (tioUncleCollisionRadius - tioUncleDistance) / tioUncleCollisionRadius * 0.2;
+      const pushX = (playerPos.x - tioUnclePosition[0]) / tioUncleDistance * pushStrength;
+      const pushZ = (playerPos.z - tioUnclePosition[2]) / tioUncleDistance * pushStrength;
+      localPlayerRef.current.position.x += pushX;
+      localPlayerRef.current.position.z += pushZ;
+    }
+
     // Garante que o jogador fique no chão
     localPlayerRef.current.position.y = 0.5;
 
@@ -352,6 +370,9 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange 
 
       {/* Mansão no canto inferior esquerdo */}
       <Mansion />
+
+      {/* Tio Uncle */}
+      <TioUncle playerPosition={localPlayerRef.current?.position ? [localPlayerRef.current.position.x, localPlayerRef.current.position.y, localPlayerRef.current.position.z] : [0, 0, 0]} />
 
       {/* Oráculo */}
       <Oracle playerPosition={localPlayerRef.current?.position ? [localPlayerRef.current.position.x, localPlayerRef.current.position.y, localPlayerRef.current.position.z] : [0, 0, 0]} />

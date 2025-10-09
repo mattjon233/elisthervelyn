@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Html } from '@react-three/drei';
 import { useGameStore } from '../../store/gameStore';
+import { useShopStore } from '../../store/shopStore';
 import soundService from '../../services/soundService';
 import socketService from '../../services/socket';
 import CooldownTimer from '../../components/CooldownTimer';
@@ -12,17 +13,25 @@ import CooldownTimer from '../../components/CooldownTimer';
  */
 function Rocket({ position = [32, 0, 32] }) {
   const meshRef = useRef();
-  const speed = 3.5;
-  const followDistance = 3;
-  const buffRadius = 5;
-  const healAmount = 5;
-  const healInterval = 20000; // 20 segundos
   const lastHealTime = useRef(0);
-
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
 
   const players = useGameStore((state) => state.players);
   const playerId = useGameStore((state) => state.playerId);
+  const upgrades = useShopStore((state) => state.upgrades);
+
+  // Parâmetros base do Rocket
+  const baseSpeed = 3.5;
+  const baseHealAmount = 5;
+  const baseHealInterval = 20000; // 20 segundos
+
+  // Aplicar melhorias
+  const speed = upgrades.rocketSpeed ? baseSpeed * 2 : baseSpeed;
+  const healAmount = upgrades.healAmount ? 10 : baseHealAmount;
+  const healInterval = upgrades.healCooldown ? 10000 : baseHealInterval;
+
+  const followDistance = 3;
+  const buffRadius = 5;
 
   useFrame((state, delta) => {
     const playerPositions = players.map(p => p.position).filter(Boolean);

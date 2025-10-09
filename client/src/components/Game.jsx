@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import GameScene from '../game/GameScene';
 import GameUI from './GameUI';
 import MissionUI from './MissionUI';
+import ShopUI from './ShopUI';
 import GameOverScreen from './GameOverScreen';
 import DamageOverlay from './DamageOverlay';
 import HealEffect from './HealEffect';
@@ -75,6 +76,9 @@ function Game({ roomData }) {
 
       {/* UI de Missões */}
       <MissionUI />
+
+      {/* UI da Loja */}
+      <ShopUI />
 
       {/* Tela de Game Over */}
       {isDead && (

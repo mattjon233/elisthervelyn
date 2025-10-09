@@ -5,8 +5,8 @@ import { create } from 'zustand';
  * Rastreia missão ativa, progresso, e recompensas
  */
 export const useMissionStore = create((set, get) => ({
-  // Ouro compartilhado por toda a equipe
-  teamGold: 0,
+  // Ouro compartilhado por toda a equipe (5000 inicial para testes)
+  teamGold: 5000,
 
   // Missão ativa (null se não tiver nenhuma)
   activeMission: null,
@@ -90,6 +90,16 @@ export const useMissionStore = create((set, get) => ({
   // Adicionar ouro manualmente (para outras fontes)
   addGold: (amount) => {
     set({ teamGold: get().teamGold + amount });
+  },
+
+  // Gastar ouro
+  spendGold: (amount) => {
+    const currentGold = get().teamGold;
+    if (currentGold >= amount) {
+      set({ teamGold: currentGold - amount });
+      return true;
+    }
+    return false;
   },
 
   // Reset (para limpar ao sair do jogo)
