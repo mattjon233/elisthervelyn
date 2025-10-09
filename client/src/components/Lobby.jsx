@@ -41,6 +41,7 @@ function Lobby({ onGameStart }) {
       console.log('[Lobby] Jogo iniciado:', data);
       setPlayers(data.players);
       useGameStore.getState().setEnemies(data.enemies || []); // Salva os inimigos na store
+      useGameStore.getState().setNpcs(data.npcs || []); // Salva os NPCs na store
 
       const myPlayerId = useGameStore.getState().playerId;
       const myPlayerData = data.players.find(p => p.id === myPlayerId);

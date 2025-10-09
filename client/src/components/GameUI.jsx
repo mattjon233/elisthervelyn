@@ -4,11 +4,13 @@ import VirtualJoystick from './VirtualJoystick';
 import AbilityCooldown from './AbilityCooldown';
 import { useGameStore } from '../store/gameStore';
 import { useMissionStore } from '../store/missionStore';
+import { useShopStore } from '../store/shopStore';
 import { usePrevious } from '../game/hooks/usePrevious';
 
 function GameUI({ character, killCount = 0, abilityState }) {
   const { players, playerId, currentDialogue, currentMission, triggerDamageEffect, triggerHealEffect } = useGameStore();
   const { teamGold } = useMissionStore();
+  const { potion } = useShopStore();
   const [mission, setMission] = useState('Aguardando missão...');
 
   // Encontra os dados do jogador local na lista de jogadores
@@ -69,6 +71,16 @@ function GameUI({ character, killCount = 0, abilityState }) {
     }, 100);
   };
 
+  const handleRotateLeft = () => {
+    // Simular pressionamento da tecla Z
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', bubbles: true }));
+  };
+
+  const handleRotateRight = () => {
+    // Simular pressionamento da tecla X
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'x', bubbles: true }));
+  };
+
   return (
     <div className="game-ui">
       {/* HUD Superior */}
@@ -97,6 +109,15 @@ function GameUI({ character, killCount = 0, abilityState }) {
             </div>
           </div>
         </div>
+
+        {/* Widget de Poção */}
+        <div className={`hud-widget potion-widget ${potion ? 'has-potion' : 'no-potion'}`}>
+          <div className="potion-icon">💊</div>
+          <div className="potion-info">
+            <div className="potion-label">Poção [1]</div>
+            <div className="potion-status">{potion ? 'Disponível' : 'Sem poção'}</div>
+          </div>
+        </div>
       </div>
 
       {/* Diálogo do Oráculo */}
@@ -115,6 +136,16 @@ function GameUI({ character, killCount = 0, abilityState }) {
           onSpecial={handleSpecial}
         />
         <AbilityCooldown character={character} abilityState={abilityState} />
+      </div>
+
+      {/* Botões de Rotação da Câmera */}
+      <div className="camera-controls">
+        <button className="camera-btn camera-left" onClick={handleRotateLeft}>
+          ↻ Z
+        </button>
+        <button className="camera-btn camera-right" onClick={handleRotateRight}>
+          ↺ X
+        </button>
       </div>
     </div>
   );

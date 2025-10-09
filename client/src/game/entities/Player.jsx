@@ -33,13 +33,18 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
   const playerData = players.find(p => p.id === playerId);
   const isDead = isLocalPlayer && playerData ? playerData.health <= 0 : false;
 
+  // Câmera third-person (apenas para o jogador local)
+  const cameraControls = isLocalPlayer ? useThirdPersonCamera(meshRef) : null;
+
   // Habilidades (apenas para o jogador local)
   const { abilityState, triggerAbility, activeAbilities } = isLocalPlayer
     ? useAbility(character)
     : { abilityState: {}, triggerAbility: () => {}, activeAbilities: [] };
 
-  // Controles (apenas para o jogador local)
-  const controls = isLocalPlayer ? usePlayerControls(meshRef, 8.0, triggerAbility, isDead) : null;
+  // Controles (apenas para o jogador local) - passa o ref do ângulo da câmera
+  const controls = isLocalPlayer
+    ? usePlayerControls(meshRef, 8.0, triggerAbility, isDead, cameraControls?.cameraAngleRef)
+    : null;
 
   // Sistema de combate (apenas para o jogador local)
   const combat = isLocalPlayer && controls
@@ -92,6 +97,7 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
     controls: controls,
     activeAbilities: activeAbilities, // Expor habilidades ativas
     abilityState: abilityState, // Expor estado das habilidades (cooldowns)
+    cameraControls: cameraControls, // Expor controles da câmera
   }));
 
   // Notificar quando controles estão prontos
@@ -100,11 +106,6 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
       onControlsReady(controls);
     }
   }, [controls, onControlsReady]);
-
-  // Câmera third-person (apenas para o jogador local)
-  if (isLocalPlayer) {
-    useThirdPersonCamera(meshRef);
-  }
 
   // Mostrar efeito de ataque
   useEffect(() => {

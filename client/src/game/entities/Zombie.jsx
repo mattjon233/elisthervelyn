@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Text } from '@react-three/drei';
 
@@ -8,10 +9,18 @@ import { Text } from '@react-three/drei';
  */
 function Zombie({ id, position = [0, 0, 0], health = 30, maxHealth = 30 }) {
   const meshRef = useRef();
+  const healthBarRef = useRef();
   const healthPercent = Math.round((health / maxHealth) * 100);
 
   // DEBUG: Verificar as props de vida recebidas
   console.log(`Zumbi ${id} - Health: ${health}/${maxHealth} (${healthPercent}%)`);
+
+  // Billboard effect - fazer a barra de HP sempre olhar para a câmera
+  useFrame(({ camera }) => {
+    if (healthBarRef.current) {
+      healthBarRef.current.lookAt(camera.position);
+    }
+  });
 
   return (
     <group ref={meshRef} position={position}>
@@ -39,7 +48,7 @@ function Zombie({ id, position = [0, 0, 0], health = 30, maxHealth = 30 }) {
 
       {/* Barra de vida melhorada com porcentagem */}
       {health > 0 && (
-        <group position={[0, 1.4, 0]}>
+        <group ref={healthBarRef} position={[0, 1.4, 0]}>
           {/* Fundo preto da barra */}
           <mesh position={[0, 0, -0.01]}>
             <planeGeometry args={[1, 0.15]} />

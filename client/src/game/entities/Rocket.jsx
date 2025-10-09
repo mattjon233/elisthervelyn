@@ -1,15 +1,13 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { Html } from '@react-three/drei';
 import { useGameStore } from '../../store/gameStore';
 import soundService from '../../services/soundService';
+import CooldownTimer from '../../components/CooldownTimer';
 
 /**
  * Rocket - Cachorro NPC de suporte
- * - Segue a jogadora mais próxima
- * - Cura jogadoras próximas (5 HP a cada 5s)
- * - Buffa jogadoras próximas (+10% dano/velocidade)
- * - Ocasionalmente stuna inimigos com latido
  */
 function Rocket({ position = [32, 0, 32], playerPositions = [] }) {
   const meshRef = useRef();
@@ -17,84 +15,89 @@ function Rocket({ position = [32, 0, 32], playerPositions = [] }) {
   const followDistance = 3;
   const buffRadius = 5;
   const healAmount = 5;
-  const healInterval = 5000; // 5 segundos
+  const healInterval = 20000; // 20 segundos
   const lastHealTime = useRef(0);
+
+  const [cooldownRemaining, setCooldownRemaining] = useState(0);
+
+  const healPlayer = useGameStore((state) => state.healPlayer);
 
   useFrame((state, delta) => {
     if (!meshRef.current || playerPositions.length === 0) return;
 
     const rocket = meshRef.current;
+    const currentTime = Date.now();
 
-    // Encontrar jogadora mais próxima
+    // --- Lógica de Cooldown ---
+    const elapsedSinceHeal = currentTime - lastHealTime.current;
+    const remainingCooldown = healInterval - elapsedSinceHeal;
+    
+    if (remainingCooldown > 0) {
+      setCooldownRemaining(remainingCooldown / 1000);
+    } else {
+      setCooldownRemaining(0);
+    }
+
+    // --- Lógica de Movimento ---
     let closestPlayer = null;
     let minDistance = Infinity;
-
     playerPositions.forEach(playerPos => {
       const rocketPos = new THREE.Vector3(rocket.position.x, 0, rocket.position.z);
       const targetPos = new THREE.Vector3(playerPos.x, 0, playerPos.z);
       const distance = rocketPos.distanceTo(targetPos);
-
       if (distance < minDistance) {
         minDistance = distance;
         closestPlayer = targetPos;
       }
     });
 
-    // Seguir jogadora mais próxima se estiver longe
     if (closestPlayer && minDistance > followDistance) {
-      const rocketPos = new THREE.Vector3(rocket.position.x, 0, rocket.position.z);
-      const direction = closestPlayer.clone().sub(rocketPos).normalize();
-
+      const direction = closestPlayer.clone().sub(rocket.position).normalize();
       rocket.position.x += direction.x * speed * delta;
       rocket.position.z += direction.z * speed * delta;
-
-      // Rotacionar na direção do movimento
-      // Invertido porque a cabeça do modelo está em Z negativo
       const angle = Math.atan2(direction.x, direction.z);
       rocket.rotation.y = angle + Math.PI;
     }
 
-    // Manter no chão
     rocket.position.y = 0.3;
-
-    // Animação de "corrida" (bob vertical)
     if (minDistance > followDistance) {
       rocket.position.y = 0.3 + Math.abs(Math.sin(state.clock.elapsedTime * 8)) * 0.1;
     }
 
-    // Animação de cauda (rotação)
     const tail = rocket.children.find(c => c.userData.isTail);
     if (tail) {
       tail.rotation.z = Math.sin(state.clock.elapsedTime * 10) * 0.3;
     }
 
-    // SISTEMA DE CURA - Curar jogadores próximos a cada 5s
-    const currentTime = Date.now();
+    // --- SISTEMA DE CURA ---
     if (currentTime - lastHealTime.current >= healInterval) {
       lastHealTime.current = currentTime;
 
-      // Verificar se há jogadores próximos (dentro do raio de buff)
-      playerPositions.forEach(playerPos => {
+      const { healthBar, maxHealth, isDead } = useGameStore.getState();
+      if (isDead || healthBar >= maxHealth) return;
+
+      const isPlayerNearby = playerPositions.some(playerPos => {
         const rocketPos = new THREE.Vector3(rocket.position.x, 0, rocket.position.z);
         const targetPos = new THREE.Vector3(playerPos.x, 0, playerPos.z);
-        const distance = rocketPos.distanceTo(targetPos);
-
-        if (distance <= buffRadius) {
-          // Curar jogador
-          const { healPlayer, healthBar, maxHealth, isDead } = useGameStore.getState();
-
-          if (!isDead && healthBar < maxHealth) {
-            healPlayer(healAmount);
-            soundService.playHealSound(); // Som de cura
-            console.log(`🐕 Rocket curou +${healAmount} HP! (${healthBar + healAmount}/${maxHealth})`);
-          }
-        }
+        return rocketPos.distanceTo(targetPos) <= buffRadius;
       });
+
+      if (isPlayerNearby) {
+        healPlayer(healAmount);
+        soundService.playHealSound();
+        const newHealth = Math.min(maxHealth, healthBar + healAmount);
+        console.log(`🐕 Rocket curou +${healAmount} HP! Vida atual: ${newHealth}/${maxHealth}`);
+      }
     }
   });
 
   return (
     <group ref={meshRef} position={position}>
+      {/* Indicador de Cooldown */}
+      <Html position={[0, 1.2, 0]} center>
+        <CooldownTimer remainingTime={cooldownRemaining} duration={healInterval / 1000} />
+      </Html>
+
       {/* Corpo do cachorro */}
       <mesh castShadow>
         <boxGeometry args={[0.4, 0.3, 0.6]} />

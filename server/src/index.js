@@ -54,6 +54,10 @@ io.on('connection', (socket) => {
   socket.on('mission_progress', (data) => gameController.handleMissionProgress(socket, data));
   socket.on('mission_complete', () => gameController.handleMissionComplete(socket));
 
+  // Loja da Tia Rose
+  socket.on('buy_potion', (data) => gameController.handleBuyPotion(socket, data));
+  socket.on('use_potion', () => gameController.handleUsePotion(socket));
+
   // Desconexão
   socket.on('disconnect', () => gameController.handleDisconnect(socket));
 });

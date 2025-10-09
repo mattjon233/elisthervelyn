@@ -113,5 +113,64 @@
       "A esperança ainda vive enquanto vocês lutarem!"
     ],
     "tipo": "derrota"
+  },
+
+  "tia_rose_primeira_visita": {
+    "momento": "Primeira vez que se aproxima da Tia Rose",
+    "tia_rose": [
+      "Olá, minhas queridas guerreiras! Eu sou a Tia Rose!",
+      "Há décadas fabrico as melhores poções de cura desta região!",
+      "Minha especialidade é a Poção de Vida - restaura 25 HP instantaneamente!",
+      "A primeira é por minha conta, mas depois custa 50 moedas de ouro cada."
+    ],
+    "tipo": "apresentacao"
+  },
+
+  "tia_rose_primeira_pocao": {
+    "momento": "Ao receber a primeira poção grátis",
+    "tia_rose": [
+      "Tome, querida! Esta é cortesia da casa!",
+      "Pressione a tecla 1 durante o combate para usá-la.",
+      "Mas lembre-se: você só pode carregar UMA poção por vez!",
+      "Volte sempre que precisar de mais!"
+    ],
+    "tipo": "tutorial"
+  },
+
+  "tia_rose_compra": {
+    "momento": "Ao comprar uma poção",
+    "tia_rose": [
+      "Excelente escolha! Aqui está sua Poção de Vida fresquinha!",
+      "Que ela te proteja nas batalhas à frente!"
+    ],
+    "tipo": "venda"
+  },
+
+  "tia_rose_sem_ouro": {
+    "momento": "Quando tenta comprar sem ouro suficiente",
+    "tia_rose": [
+      "Ah, querida... parece que você está sem moedas no momento.",
+      "Vá completar algumas missões com o Oráculo e volte depois!",
+      "Minhas poções estarão te esperando!"
+    ],
+    "tipo": "recusa"
+  },
+
+  "tia_rose_inventario_cheio": {
+    "momento": "Quando tenta comprar já tendo uma poção",
+    "tia_rose": [
+      "Calma lá, jovem! Você já tem uma poção!",
+      "Use a que tem primeiro, depois volte para comprar outra.",
+      "Não quero que desperdiçe minhas preciosidades!"
+    ],
+    "tipo": "recusa"
+  },
+
+  "tia_rose_saudacao": {
+    "momento": "Quando se aproxima novamente",
+    "tia_rose": [
+      "Olá de novo, querida! Precisa de uma poção?"
+    ],
+    "tipo": "saudacao"
   }
 }

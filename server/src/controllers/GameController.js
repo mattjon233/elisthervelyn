@@ -61,7 +61,9 @@ export class GameController {
       // Missões colaborativas
       activeMission: null,
       missionProgress: 0,
-      teamGold: 0
+      teamGold: 0,
+      // NPCs passivos (não atacam nem tomam dano)
+      npcs: []
     };
 
     this.rooms.set(roomId, room);
@@ -124,6 +126,9 @@ export class GameController {
       position: { x: 30 + Math.random() * 4, y: 0.5, z: 30 + Math.random() * 4 }, // Spawn perto do Oracle
       health: this.gameService.getCharacterStats(character).stats.vida_maxima,
       maxHealth: this.gameService.getCharacterStats(character).stats.vida_maxima,
+      // Sistema de poções
+      hasPotion: false,
+      hasReceivedFreePotion: false,
     };
 
     if (playerIndex >= 0) {
@@ -160,8 +165,12 @@ export class GameController {
 
     // O servidor agora é o dono da lista de inimigos
     room.enemies = this.gameService.getInitialEnemies();
-    // Adiciona o Rocket à lista de entidades da sala
-    room.enemies.push({ id: 'rocket_npc', type: 'rocket', position: [0, 0.5, 2], health: 999, maxHealth: 999 });
+
+    // NPCs passivos (não atacam nem tomam dano)
+    room.npcs = [
+      { id: 'rocket_npc', type: 'rocket', position: [0, 0.5, 2] },
+      { id: 'tia_rose_npc', type: 'tia_rose', position: [-35, 0, -35] }
+    ];
 
     // Carregar diálogo de introdução
     const introDialogue = await this.dialogueService.getDialogue('intro');
@@ -174,6 +183,7 @@ export class GameController {
       mission: mission1Data,
       players: room.players,
       enemies: room.enemies, // Envia a lista inicial de inimigos
+      npcs: room.npcs, // Envia NPCs passivos
     });
 
     console.log(`[GameController] Jogo iniciado na sala ${roomId}`);
@@ -432,6 +442,119 @@ export class GameController {
       missionProgress: room.missionProgress,
       teamGold: room.teamGold
     });
+  }
+
+  /**
+   * Comprar poção da Tia Rose
+   */
+  handleBuyPotion(socket, { potionId }) {
+    const roomId = this.playerRooms.get(socket.id);
+    const room = this.rooms.get(roomId);
+    if (!room || !room.gameStarted) return;
+
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player) return;
+
+    // Verificar se já tem uma poção
+    if (player.hasPotion) {
+      socket.emit('potion_buy_result', {
+        success: false,
+        message: 'Você já tem uma poção! Use-a antes de comprar outra.'
+      });
+      return;
+    }
+
+    // Primeira poção é grátis!
+    if (!player.hasReceivedFreePotion) {
+      player.hasPotion = true;
+      player.hasReceivedFreePotion = true;
+
+      console.log(`SERVER: ${player.id} recebeu primeira poção grátis`);
+
+      socket.emit('potion_buy_result', {
+        success: true,
+        message: 'Primeira poção cortesia da casa, querida!',
+        cost: 0,
+        isFirstPotion: true
+      });
+      return;
+    }
+
+    // Preço da poção
+    const potionPrice = 50;
+
+    // Verificar se tem ouro suficiente
+    if (room.teamGold < potionPrice) {
+      socket.emit('potion_buy_result', {
+        success: false,
+        message: `Você precisa de ${potionPrice} moedas de ouro, querida!`
+      });
+      return;
+    }
+
+    // Descontar ouro e dar poção
+    room.teamGold -= potionPrice;
+    player.hasPotion = true;
+
+    console.log(`SERVER: ${player.id} comprou poção por ${potionPrice} ouro (Restante: ${room.teamGold})`);
+
+    socket.emit('potion_buy_result', {
+      success: true,
+      message: 'Poção comprada com sucesso!',
+      cost: potionPrice,
+      isFirstPotion: false
+    });
+
+    // Atualizar ouro para todos
+    this.io.to(roomId).emit('mission_updated', {
+      activeMission: room.activeMission,
+      missionProgress: room.missionProgress,
+      teamGold: room.teamGold
+    });
+  }
+
+  /**
+   * Usar poção
+   */
+  handleUsePotion(socket) {
+    const roomId = this.playerRooms.get(socket.id);
+    const room = this.rooms.get(roomId);
+    if (!room || !room.gameStarted) return;
+
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player) return;
+
+    // Verificar se tem poção
+    if (!player.hasPotion) {
+      socket.emit('error', { message: 'Você não tem nenhuma poção!' });
+      return;
+    }
+
+    // Verificar se está morto
+    if (player.health <= 0) {
+      socket.emit('error', { message: 'Você não pode usar poção enquanto está morto!' });
+      return;
+    }
+
+    // Aplicar cura
+    const healAmount = 25;
+    const oldHealth = player.health;
+    player.health = Math.min(player.maxHealth, player.health + healAmount);
+    const actualHeal = player.health - oldHealth;
+
+    // Remover poção do inventário
+    player.hasPotion = false;
+
+    console.log(`SERVER: ${player.id} usou poção e curou ${actualHeal} HP (${oldHealth} -> ${player.health})`);
+
+    // Notificar o jogador
+    socket.emit('potion_used', {
+      healAmount: actualHeal,
+      newHealth: player.health
+    });
+
+    // Broadcast do novo estado
+    this.io.to(roomId).emit('game_state_updated', { enemies: room.enemies, players: room.players });
   }
 
   /**

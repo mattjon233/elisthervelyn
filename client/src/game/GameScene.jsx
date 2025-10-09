@@ -3,6 +3,8 @@ import { useFrame } from '@react-three/fiber';
 import { Sky } from '@react-three/drei';
 import Ground from './entities/Ground';
 import Oracle from './entities/Oracle';
+import TiaRose from './entities/TiaRose';
+import Mansion from './entities/Mansion';
 import MapBoundary from './entities/MapBoundary';
 import Player from './entities/Player';
 import Zombie from './entities/Zombie';
@@ -11,6 +13,7 @@ import Rocket from './entities/Rocket';
 import DeathAnimation from './entities/DeathAnimation';
 import { useGameStore } from '../store/gameStore';
 import { useMissionStore } from '../store/missionStore';
+import { useShopStore } from '../store/shopStore';
 import socketService from '../services/socket';
 import soundService from '../services/soundService';
 import * as THREE from 'three';
@@ -39,7 +42,8 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange 
     }
   }, [killCount, onKillCountChange]);
 
-  const { players, playerId, enemies, updatePlayerMovement } = useGameStore();
+  const { players, playerId, enemies, npcs, updatePlayerMovement } = useGameStore();
+  const { potion, usePotion } = useShopStore();
 
   // Listener para movimento de jogadores remotos
   useEffect(() => {
@@ -85,6 +89,38 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange 
       socketService.off('mission_updated', handleMissionUpdate);
     };
   }, []);
+
+  // Listener para uso de poção
+  useEffect(() => {
+    const handlePotionUsed = ({ healAmount, newHealth }) => {
+      console.log(`💊 Poção usada! Curou ${healAmount} HP (Vida: ${newHealth})`);
+      soundService.playHealSound();
+    };
+
+    socketService.on('potion_used', handlePotionUsed);
+
+    return () => {
+      socketService.off('potion_used', handlePotionUsed);
+    };
+  }, []);
+
+  // Detectar tecla 1 para usar poção
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (e.key === '1' && !isDead) {
+        if (potion) {
+          console.log('💊 Tentando usar poção...');
+          socketService.emit('use_potion');
+          usePotion(); // Remove da store local
+        } else {
+          console.log('❌ Você não tem nenhuma poção!');
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [potion, isDead, usePotion]);
 
   // Lógica para detectar mortes de inimigos e atualizar kill count
   const prevEnemies = usePrevious(enemies);
@@ -293,8 +329,32 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange 
       {/* Barreiras do mapa */}
       <MapBoundary />
 
+      {/* Mansão no canto inferior esquerdo */}
+      <Mansion />
+
       {/* Oráculo */}
       <Oracle playerPosition={localPlayerRef.current?.position ? [localPlayerRef.current.position.x, localPlayerRef.current.position.y, localPlayerRef.current.position.z] : [0, 0, 0]} />
+
+      {/* NPCs passivos (não atacam nem tomam dano) */}
+      {npcs.map((npc) => {
+        if (npc.type === 'tia_rose') {
+          return (
+            <TiaRose
+              key={npc.id}
+              playerPosition={localPlayerRef.current?.position ? [localPlayerRef.current.position.x, localPlayerRef.current.position.y, localPlayerRef.current.position.z] : [0, 0, 0]}
+            />
+          );
+        }
+        if (npc.type === 'rocket') {
+          return (
+            <Rocket
+              key={npc.id}
+              playerPositions={playerPositions}
+            />
+          );
+        }
+        return null;
+      })}
 
       {/* Jogador Local - Respawn perto do Oracle */}
       <Player
@@ -336,9 +396,6 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange 
           isLocalPlayer={false}
         />
       ))}
-
-      {/* Rocket (NPC cachorro) */}
-      <Rocket playerPositions={playerPositions} />
 
       {/* Inimigos */}
       {enemies.map((enemy) => {

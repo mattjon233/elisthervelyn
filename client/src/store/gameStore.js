@@ -27,6 +27,9 @@ export const useGameStore = create((set, get) => ({
   // Inimigos
   enemies: [],
 
+  // NPCs passivos (não atacam nem tomam dano)
+  npcs: [],
+
   // Boss
   bossActive: false,
   bossData: null,
@@ -86,6 +89,8 @@ export const useGameStore = create((set, get) => ({
   clearDialogue: () => set({ currentDialogue: null }),
 
   setEnemies: (enemies) => set({ enemies }),
+
+  setNpcs: (npcs) => set({ npcs }),
 
   addEnemy: (enemy) => set((state) => ({
     enemies: [...state.enemies, enemy]

@@ -98,6 +98,52 @@
   padding: 15px 20px;
 }
 
+/* --- Widget de Poção --- */
+.potion-widget {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 15px;
+  transition: all 0.3s ease;
+}
+
+.potion-widget.has-potion {
+  background: rgba(255, 20, 147, 0.15);
+  border-color: rgba(255, 20, 147, 0.5);
+  box-shadow: 0 0 15px rgba(255, 20, 147, 0.3);
+}
+
+.potion-widget.no-potion {
+  opacity: 0.5;
+}
+
+.potion-icon {
+  font-size: 32px;
+  animation: potionPulse 2s ease-in-out infinite;
+}
+
+@keyframes potionPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.potion-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.potion-label {
+  font-size: 12px;
+  font-weight: bold;
+  color: #FFB6D9;
+}
+
+.potion-status {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
 .mission-text {
   font-size: 14px;
   font-weight: normal;
@@ -173,6 +219,57 @@
   justify-content: space-between;
   align-items: flex-end;
   pointer-events: all;
+}
+
+/* --- Controles de Câmera --- */
+.camera-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 50%;
+  transform: translateX(50%);
+  display: flex;
+  gap: 15px;
+  pointer-events: all;
+  z-index: 100;
+}
+
+.camera-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(20, 20, 30, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.camera-btn:hover {
+  background: rgba(30, 30, 40, 0.9);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.05);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+}
+
+.camera-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.camera-left {
+  background: linear-gradient(135deg, rgba(100, 149, 237, 0.3), rgba(20, 20, 30, 0.8));
+}
+
+.camera-right {
+  background: linear-gradient(135deg, rgba(138, 43, 226, 0.3), rgba(20, 20, 30, 0.8));
 }
 
 /* --- Responsividade --- */
