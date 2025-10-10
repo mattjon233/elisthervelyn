@@ -2,15 +2,21 @@ import { useState, useEffect } from 'react';
 import './GameUI.css';
 import VirtualJoystick from './VirtualJoystick';
 import AbilityCooldown from './AbilityCooldown';
+import InvulnerabilityCooldown from './InvulnerabilityCooldown';
+import SkillTreeUI from './SkillTreeUI';
 import { useGameStore } from '../store/gameStore';
 import { useMissionStore } from '../store/missionStore';
 import { useShopStore } from '../store/shopStore';
+import { useLevelStore } from '../store/levelStore';
 import { usePrevious } from '../game/hooks/usePrevious';
 
-function GameUI({ character, killCount = 0, abilityState }) {
+function GameUI({ character, killCount = 0, abilityState, invulnerabilityState, stonePrompts = {} }) {
   const { players, playerId, currentDialogue, triggerDamageEffect, triggerHealEffect } = useGameStore();
   const { teamGold, activeMission } = useMissionStore();
   const { potion } = useShopStore();
+  const { currentLevel, currentXP, xpToNextLevel, skillPoints } = useLevelStore();
+
+  const [isSkillTreeOpen, setIsSkillTreeOpen] = useState(false);
 
   // Encontra os dados do jogador local na lista de jogadores
   const localPlayer = players.find(p => p.id === playerId);
@@ -59,6 +65,12 @@ function GameUI({ character, killCount = 0, abilityState }) {
     window.dispatchEvent(event);
   };
 
+  const handleInvulnerability = () => {
+    console.log('🛡️ Botão de invulnerabilidade pressionado');
+    const event = new CustomEvent('mobileInput', { detail: { action: 'invulnerability' } });
+    window.dispatchEvent(event);
+  };
+
   const handleRotateLeft = () => {
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', bubbles: true }));
   };
@@ -66,6 +78,18 @@ function GameUI({ character, killCount = 0, abilityState }) {
   const handleRotateRight = () => {
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'x', bubbles: true }));
   };
+
+  // Atalho K para abrir Skill Tree
+  useEffect(() => {
+    const handleSkillTreeKey = (e) => {
+      if (e.key === 'k' || e.key === 'K') {
+        setIsSkillTreeOpen(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleSkillTreeKey);
+    return () => window.removeEventListener('keydown', handleSkillTreeKey);
+  }, []);
 
   return (
     <div className="game-ui">
@@ -75,10 +99,21 @@ function GameUI({ character, killCount = 0, abilityState }) {
         <div className="hud-widget character-info-widget">
           <div className="character-portrait" style={{ backgroundColor: character?.color || '#FFB6D9' }}></div>
           <div className="character-details">
-            <div className="character-name">{character?.name || 'Jogadora'}</div>
+            <div className="character-name-row">
+              <div className="character-name">{character?.name || 'Jogadora'}</div>
+              <div className="character-level" onClick={() => setIsSkillTreeOpen(true)}>
+                <span>⭐ Nível {currentLevel}</span>
+                <span className="level-key-hint">K</span>
+                {skillPoints > 0 && <span className="skill-points-badge">{skillPoints}</span>}
+              </div>
+            </div>
             <div className="health-bar">
               <div className="health-fill" style={{ width: `${healthPercentage}%` }}></div>
               <div className="health-text">{health} / {maxHealth}</div>
+            </div>
+            <div className="xp-bar">
+              <div className="xp-fill" style={{ width: `${(currentXP / xpToNextLevel) * 100}%` }}></div>
+              <div className="xp-text">{currentXP} / {xpToNextLevel} XP</div>
             </div>
           </div>
         </div>
@@ -105,6 +140,24 @@ function GameUI({ character, killCount = 0, abilityState }) {
         </div>
       )}
 
+      {/* Prompt de Interação - Coletar Pedra */}
+      {stonePrompts.showStonePrompt && (
+        <div className="interaction-prompt stone-prompt">
+          <div className="prompt-icon">💎</div>
+          <div className="prompt-text">Pressione E para coletar a Pedra Preciosa!</div>
+          <div className="prompt-key">E</div>
+        </div>
+      )}
+
+      {/* Prompt de Interação - Entregar ao Oráculo */}
+      {stonePrompts.showOracleDeliveryPrompt && (
+        <div className="interaction-prompt oracle-prompt">
+          <div className="prompt-icon">✨</div>
+          <div className="prompt-text">Pressione E para entregar a Pedra ao Oráculo!</div>
+          <div className="prompt-key">E</div>
+        </div>
+      )}
+
       {/* Controles Touch Virtual (mobile) */}
       <div className="touch-controls">
         <VirtualJoystick
@@ -113,6 +166,7 @@ function GameUI({ character, killCount = 0, abilityState }) {
           onSpecial={handleSpecial}
           onInteract={handleInteract}
           onUsePotion={handleUsePotion}
+          onInvulnerability={handleInvulnerability}
         />
       </div>
 
@@ -123,7 +177,15 @@ function GameUI({ character, killCount = 0, abilityState }) {
           <div className="potion-icon">💊</div>
           <div className="potion-key">C</div>
         </div>
+        {/* Pedra Preciosa */}
+        {stonePrompts.hasStoneInInventory && (
+          <div className="hud-widget stone-widget has-stone">
+            <div className="stone-icon">💎</div>
+            <div className="stone-label">Pedra</div>
+          </div>
+        )}
         <AbilityCooldown character={character} abilityState={abilityState} />
+        <InvulnerabilityCooldown invulnerabilityState={invulnerabilityState} />
       </div>
 
       {/* Botões de Rotação da Câmera */}
@@ -135,6 +197,9 @@ function GameUI({ character, killCount = 0, abilityState }) {
           ↺ X
         </button>
       </div>
+
+      {/* Skill Tree Modal */}
+      {isSkillTreeOpen && <SkillTreeUI onClose={() => setIsSkillTreeOpen(false)} />}
     </div>
   );
 }

@@ -14,6 +14,8 @@ import './Game.css';
 function Game({ roomData }) {
   const [killCount, setKillCount] = useState(0);
   const [abilityState, setAbilityState] = useState(null);
+  const [invulnerabilityState, setInvulnerabilityState] = useState(null);
+  const [stonePrompts, setStonePrompts] = useState({ showStonePrompt: false, showOracleDeliveryPrompt: false, hasStoneInInventory: false });
   const [healAmount, setHealAmount] = useState(5);
   const { players, playerId, isDead, lastDamageTime, lastHealTime, respawnPlayer, setDead } = useGameStore();
 
@@ -58,6 +60,8 @@ function Game({ roomData }) {
           onKillCountChange={setKillCount}
           isDead={isDead}
           onAbilityStateChange={setAbilityState}
+          onInvulnerabilityStateChange={setInvulnerabilityState}
+          onStonePromptsChange={setStonePrompts}
         />
       </Canvas>
 
@@ -72,6 +76,8 @@ function Game({ roomData }) {
         character={roomData?.character}
         killCount={killCount}
         abilityState={abilityState}
+        invulnerabilityState={invulnerabilityState}
+        stonePrompts={stonePrompts}
       />
 
       {/* UI de Missões */}

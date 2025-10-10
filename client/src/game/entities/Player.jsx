@@ -3,6 +3,8 @@ import { usePlayerControls } from '../hooks/usePlayerControls';
 import { useThirdPersonCamera } from '../hooks/useThirdPersonCamera';
 import { useCombat } from '../hooks/useCombat';
 import { useAbility } from '../hooks/useAbility';
+import { useInvulnerability } from '../hooks/useInvulnerability';
+import { useLevelStore } from '../../store/levelStore';
 import socketService from '../../services/socket';
 import soundService from '../../services/soundService';
 import AttackEffect from './AttackEffect';
@@ -37,6 +39,25 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
   const playerData = players.find(p => p.id === playerId);
   const isDead = isLocalPlayer && playerData ? playerData.health <= 0 : false;
 
+  // Bonus de skills
+  const { bonuses } = useLevelStore();
+  const playerSpeed = 8.0 * bonuses.speedMultiplier; // Aplica bonus de velocidade
+
+  // DEBUG: Log dos bonuses ativos
+  useEffect(() => {
+    if (isLocalPlayer) {
+      console.log('🔧 DEBUG Player Bonuses:', {
+        speedMultiplier: bonuses.speedMultiplier,
+        calculatedSpeed: playerSpeed,
+        maxHealthBonus: bonuses.maxHealthBonus,
+        abilityCooldownMultiplier: bonuses.abilityCooldownMultiplier,
+        damageMultiplier: bonuses.damageMultiplier,
+        hasInvulnerability: bonuses.hasInvulnerability,
+        instakillChance: bonuses.instakillChance
+      });
+    }
+  }, [bonuses, isLocalPlayer, playerSpeed]);
+
   // Câmera third-person (apenas para o jogador local)
   const cameraControls = isLocalPlayer ? useThirdPersonCamera(meshRef) : null;
 
@@ -45,9 +66,12 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
     ? useAbility(character)
     : { abilityState: {}, triggerAbility: () => {}, activeAbilities: [] };
 
-  // Controles (apenas para o jogador local) - passa o ref do ângulo da câmera
+  // Invulnerabilidade (apenas para o jogador local)
+  const invulnerability = isLocalPlayer ? useInvulnerability() : null;
+
+  // Controles (apenas para o jogador local) - passa o ref do ângulo da câmera e velocidade com bonus
   const controls = isLocalPlayer
-    ? usePlayerControls(meshRef, 8.0, triggerAbility, isDead, cameraControls?.cameraAngleRef)
+    ? usePlayerControls(meshRef, playerSpeed, triggerAbility, isDead, cameraControls?.cameraAngleRef)
     : null;
 
   // Sistema de combate (apenas para o jogador local)
@@ -58,11 +82,21 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
   // Efeito de invulnerabilidade, animação de ataque e animação de caminhada
   useFrame(({ clock }, delta) => {
     if (isLocalPlayer && materialRef.current) {
-      const isInvulnerable = playerData?.invulnerableUntil && Date.now() < playerData.invulnerableUntil;
+      // Invulnerabilidade do servidor (após tomar dano) OU da skill T
+      const serverInvuln = playerData?.invulnerableUntil && Date.now() < playerData.invulnerableUntil;
+      const skillInvuln = invulnerability?.isInvulnerable || false;
+      const isInvulnerable = serverInvuln || skillInvuln;
+
       if (isInvulnerable) {
-        // Faz o personagem piscar com um brilho branco
+        // Faz o personagem piscar com um brilho (dourado se skill T, branco se servidor)
         const pulse = (Math.sin(clock.elapsedTime * 30) + 1) / 2; // 0 a 1
-        materialRef.current.emissive.setRGB(pulse, pulse, pulse);
+        if (skillInvuln) {
+          // Brilho dourado para skill T
+          materialRef.current.emissive.setRGB(pulse, pulse * 0.8, 0);
+        } else {
+          // Brilho branco para invuln do servidor
+          materialRef.current.emissive.setRGB(pulse, pulse, pulse);
+        }
       } else {
         materialRef.current.emissive.setRGB(0, 0, 0); // Remove o brilho
       }
@@ -128,6 +162,7 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
     rotation: meshRef.current?.rotation,
     controls: controls,
     activeAbilities: activeAbilities, // Expor habilidades ativas
+    invulnerability: invulnerability, // Expor invulnerabilidade
     abilityState: abilityState, // Expor estado das habilidades (cooldowns)
     cameraControls: cameraControls, // Expor controles da câmera
   }));
@@ -146,6 +181,13 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
       soundService.playAttackSound(); // Som de ataque
     }
   }, [controls?.isAttacking]);
+
+  // Ativar invulnerabilidade quando tecla T é pressionada
+  useEffect(() => {
+    if (controls?.keys?.invulnerability && invulnerability) {
+      invulnerability.activate();
+    }
+  }, [controls?.keys?.invulnerability, invulnerability]);
 
   // Enviar posição via Socket.io (throttled)
   useEffect(() => {

@@ -51,12 +51,18 @@ io.on('connection', (socket) => {
 
   // Missões colaborativas
   socket.on('mission_accept', (data) => gameController.handleMissionAccept(socket, data));
-  socket.on('mission_progress', (data) => gameController.handleMissionProgress(socket, data));
   socket.on('mission_complete', () => gameController.handleMissionComplete(socket));
 
   // Loja da Tia Rose
   socket.on('buy_potion', (data) => gameController.handleBuyPotion(socket, data));
   socket.on('use_potion', () => gameController.handleUsePotion(socket));
+
+  // Pedra Preciosa
+  socket.on('collect_stone', () => gameController.handleCollectStone(socket));
+  socket.on('deliver_stone', () => gameController.handleDeliverStone(socket));
+
+  // DEBUG: Matar todos os monstros (tecla B)
+  socket.on('debug_kill_all', () => gameController.handleDebugKillAll(socket));
 
   // Desconexão
   socket.on('disconnect', () => gameController.handleDisconnect(socket));

@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { useLevelStore } from '../../store/levelStore';
 
 /**
  * Hook para gerenciar sistema de combate
@@ -10,14 +11,22 @@ export function useCombat(playerRef, character, isAttacking) {
   const [hitEnemies, setHitEnemies] = useState([]);
   const attackRangeRef = useRef(1.5); // Alcance do ataque básico
 
+  // Pega os bonus de skills
+  const { bonuses } = useLevelStore();
+
   // Calcular dano base por personagem
   const getBaseDamage = () => {
-    switch (character?.id) {
-      case 'esther': return 15; // Arqueira - dano médio
-      case 'elissa': return 20; // Guerreira - dano alto
-      case 'evelyn': return 12; // Maga - dano baixo (depende de habilidades)
-      default: return 10;
-    }
+    const baseDmg = (() => {
+      switch (character?.id) {
+        case 'esther': return 15; // Arqueira - dano médio
+        case 'elissa': return 20; // Guerreira - dano alto
+        case 'evelyn': return 12; // Maga - dano baixo (depende de habilidades)
+        default: return 10;
+      }
+    })();
+
+    // Aplica multiplicador de dano da skill tree
+    return Math.floor(baseDmg * bonuses.damageMultiplier);
   };
 
   /**
@@ -60,10 +69,19 @@ export function useCombat(playerRef, character, isAttacking) {
 
         // Se o ângulo for menor que 60 graus (cos(60°) ≈ 0.5), está no cone
         if (dotProduct > 0.5) {
+          // Verificar chance de instakill
+          const isInstakill = Math.random() < bonuses.instakillChance;
+          const damage = isInstakill ? 9999 : getBaseDamage(); // 9999 = instakill
+
+          if (isInstakill) {
+            console.log('💀 INSTAKILL!');
+          }
+
           hits.push({
             enemyId: enemy.id,
-            damage: getBaseDamage(),
-            distance: distance
+            damage: damage,
+            distance: distance,
+            isInstakill: isInstakill
           });
         }
       }

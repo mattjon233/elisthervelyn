@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import soundService from '../../services/soundService';
+import { useLevelStore } from '../../store/levelStore';
 
 // Mapa de habilidades por personagem
 const characterAbilities = {
@@ -45,6 +46,9 @@ const characterAbilities = {
  * Controla cooldowns, ativação e renderização de efeitos.
  */
 export function useAbility(character) {
+  // Pega os bonus de skills
+  const { bonuses } = useLevelStore();
+
   // Pega as habilidades do personagem ou um array vazio se não existir
   const abilities = characterAbilities[character?.id] || [];
 
@@ -95,8 +99,9 @@ export function useAbility(character) {
       }, ability.duration);
 
       const startTime = Date.now();
+      const actualCooldown = ability.cooldown * bonuses.abilityCooldownMultiplier; // Aplica multiplicador de cooldown
       const cooldownInterval = setInterval(() => {
-        const progress = Math.min((Date.now() - startTime) / ability.cooldown, 1);
+        const progress = Math.min((Date.now() - startTime) / actualCooldown, 1);
         setAbilityState(s => ({ ...s, [ability.id]: { ...s[ability.id], cooldownProgress: progress } }));
         if (progress >= 1) {
           clearInterval(cooldownInterval);
@@ -111,7 +116,7 @@ export function useAbility(character) {
         [ability.id]: { ...currentState[ability.id], canUse: false, isUsing: true },
       };
     });
-  }, [abilities]); // A dependência é apenas 'abilities', que é estável.
+  }, [abilities, bonuses]); // Dependências: abilities e bonuses
 
   // Limpeza dos timers
   useEffect(() => {

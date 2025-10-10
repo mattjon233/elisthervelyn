@@ -34,8 +34,8 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
       if (isDead) return; // Não aceitar input se morto
 
       const key = e.key.toLowerCase();
-      // Inclui 'q' para habilidade e 'c' para poção
-      if (['w', 'a', 's', 'd', ' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'f', 'j', 'q', 'c', 'e'].includes(key)) {
+      // Inclui 'q' para habilidade, 'c' para poção e 't' para invulnerabilidade
+      if (['w', 'a', 's', 'd', ' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'f', 'j', 'q', 'c', 'e', 't'].includes(key)) {
         e.preventDefault();
 
         setKeys((prev) => ({
@@ -48,6 +48,7 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
           attack: prev.attack || key === 'f' || key === 'j',
           ability: prev.ability || key === 'q', // Habilidade com Q
           potion: prev.potion || key === 'c', // Poção com C
+          invulnerability: prev.invulnerability || key === 't', // Invulnerabilidade com T
         }));
       }
     };
@@ -78,6 +79,11 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
         setTimeout(() => {
           window.dispatchEvent(new KeyboardEvent('keyup', { key: 'e', bubbles: true }));
         }, 100);
+      } else if (action === 'invulnerability') {
+        setKeys((prev) => ({ ...prev, invulnerability: true }));
+        setTimeout(() => {
+          setKeys((prev) => ({ ...prev, invulnerability: false }));
+        }, 100);
       }
     };
 
@@ -93,6 +99,7 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
         attack: prev.attack && key !== 'f' && key !== 'j',
         ability: prev.ability && key !== 'q',
         potion: prev.potion && key !== 'c',
+        invulnerability: prev.invulnerability && key !== 't',
       }));
     };
 
@@ -107,6 +114,7 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
         attack: false,
         ability: false,
         potion: false,
+        invulnerability: false,
       });
     };
 

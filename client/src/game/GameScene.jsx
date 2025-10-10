@@ -12,6 +12,7 @@ import Ghost from './entities/Ghost';
 import Rocket from './entities/Rocket';
 import DeathAnimation from './entities/DeathAnimation';
 import TioUncle from './entities/TioUncle';
+import PreciousStone from './entities/PreciousStone';
 import { useGameStore } from '../store/gameStore';
 import { useMissionStore } from '../store/missionStore';
 import { useShopStore } from '../store/shopStore';
@@ -19,8 +20,9 @@ import socketService from '../services/socket';
 import soundService from '../services/soundService';
 import * as THREE from 'three';
 import { usePrevious } from './hooks/usePrevious';
+import { useLevelStore } from '../store/levelStore';
 
-function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange }) {
+function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange, onInvulnerabilityStateChange, onStonePromptsChange }) {
 
   const localPlayerRef = useRef();
   const directionalLightRef = useRef();
@@ -44,6 +46,12 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange 
   const lastAttackTimeRef = useRef(0);
 
   const hitEnemiesRef = useRef({}); // Rastreia inimigos atingidos por habilidade
+
+  // Estado da pedra preciosa
+  const [preciousStone, setPreciousStone] = useState(null);
+  const [hasStoneInInventory, setHasStoneInInventory] = useState(false);
+  const [showStonePrompt, setShowStonePrompt] = useState(false);
+  const [showOracleDeliveryPrompt, setShowOracleDeliveryPrompt] = useState(false);
 
 
 
@@ -107,6 +115,59 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange 
     };
   }, []);
 
+  // Listener para ganho de XP
+  useEffect(() => {
+    const handleXPGained = ({ amount, reason }) => {
+      const currentXP = useLevelStore.getState().currentXP;
+
+      console.log(`CLIENT: Evento xp_gained recebido - Jogador ${playerId}`);
+      useLevelStore.getState().addXP(amount);
+
+      const reasonText = reason === 'monster_kill' ? 'Monstro morto' :
+                        reason === 'mission_complete' ? 'Missão completa' :
+                        reason === 'stone_delivered' ? 'Pedra entregue' : 'XP ganho';
+      console.log(`⭐ +${amount} XP (${reasonText}) - XP total: ${currentXP + amount}`);
+    };
+
+    socketService.on('xp_gained', handleXPGained);
+
+    return () => {
+      socketService.off('xp_gained', handleXPGained);
+    };
+  }, [playerId]);
+
+  // Listener para spawn da pedra preciosa
+  useEffect(() => {
+    const handleStoneSpawned = ({ position }) => {
+      console.log('💎 Pedra preciosa spawnou na posição:', position);
+      setPreciousStone(position);
+    };
+
+    const handleStoneCollected = ({ playerId: collectorId }) => {
+      console.log('💎 Pedra preciosa coletada por:', collectorId);
+      setPreciousStone(null);
+      if (collectorId === playerId) {
+        setHasStoneInInventory(true);
+      }
+    };
+
+    const handleStoneDelivered = () => {
+      console.log('💎 Pedra preciosa entregue ao Oráculo!');
+      setHasStoneInInventory(false);
+      setShowOracleDeliveryPrompt(false);
+    };
+
+    socketService.on('precious_stone_spawned', handleStoneSpawned);
+    socketService.on('stone_collected', handleStoneCollected);
+    socketService.on('stone_delivered', handleStoneDelivered);
+
+    return () => {
+      socketService.off('precious_stone_spawned', handleStoneSpawned);
+      socketService.off('stone_collected', handleStoneCollected);
+      socketService.off('stone_delivered', handleStoneDelivered);
+    };
+  }, [playerId]);
+
   // Listener para uso de poção
   useEffect(() => {
     const handlePotionUsed = ({ healAmount, newHealth }) => {
@@ -139,6 +200,79 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange 
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [potion, isDead, usePotion]);
 
+  // DEBUG: Tecla B para matar todos os monstros
+  useEffect(() => {
+    const handleDebugKey = (e) => {
+      if ((e.key === 'b' || e.key === 'B') && !isDead) {
+        console.log('🔧 DEBUG: Matando todos os monstros...');
+        socketService.emit('debug_kill_all');
+      }
+      // DEBUG: Tecla N para adicionar 1000 XP
+      if ((e.key === 'n' || e.key === 'N') && !isDead) {
+        console.log('🔧 DEBUG: Adicionando 1000 XP...');
+        useLevelStore.getState().addXP(1000);
+      }
+      // DEBUG: Tecla M para mostrar status de skills
+      if ((e.key === 'm' || e.key === 'M') && !isDead) {
+        const state = useLevelStore.getState();
+        console.log('🔧 DEBUG Skills Status:', {
+          level: state.currentLevel,
+          xp: state.currentXP,
+          skillPoints: state.skillPoints,
+          skills: state.skills,
+          bonuses: state.bonuses
+        });
+      }
+    };
+
+    window.addEventListener('keydown', handleDebugKey);
+    return () => window.removeEventListener('keydown', handleDebugKey);
+  }, [isDead]);
+
+  // Detectar tecla E para interagir (coletar pedra ou entregar ao Oráculo)
+  useEffect(() => {
+    const handleInteraction = (e) => {
+      if ((e.key === 'e' || e.key === 'E') && !isDead) {
+        // Coletar pedra preciosa
+        if (showStonePrompt && preciousStone) {
+          console.log('💎 Coletando pedra preciosa...');
+          socketService.emit('collect_stone');
+          setShowStonePrompt(false);
+        }
+        // Entregar pedra ao Oráculo
+        else if (showOracleDeliveryPrompt && hasStoneInInventory) {
+          console.log('💎 Entregando pedra ao Oráculo...');
+          socketService.emit('deliver_stone');
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleInteraction);
+    return () => window.removeEventListener('keydown', handleInteraction);
+  }, [isDead, showStonePrompt, showOracleDeliveryPrompt, hasStoneInInventory, preciousStone]);
+
+  // Listener para mobile interact button
+  useEffect(() => {
+    const handleMobileInteract = (e) => {
+      if (e.detail?.action === 'interact' && !isDead) {
+        // Coletar pedra preciosa
+        if (showStonePrompt && preciousStone) {
+          console.log('💎 Coletando pedra preciosa (mobile)...');
+          socketService.emit('collect_stone');
+          setShowStonePrompt(false);
+        }
+        // Entregar pedra ao Oráculo
+        else if (showOracleDeliveryPrompt && hasStoneInInventory) {
+          console.log('💎 Entregando pedra ao Oráculo (mobile)...');
+          socketService.emit('deliver_stone');
+        }
+      }
+    };
+
+    window.addEventListener('mobileInput', handleMobileInteract);
+    return () => window.removeEventListener('mobileInput', handleMobileInteract);
+  }, [isDead, showStonePrompt, showOracleDeliveryPrompt, hasStoneInInventory, preciousStone]);
+
   // Lógica para detectar mortes de inimigos e atualizar kill count
   const prevEnemies = usePrevious(enemies);
 
@@ -153,9 +287,7 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange 
           if (onKillCountChange) {
             onKillCountChange(prevCount => prevCount + 1);
           }
-
-          // Enviar progresso da missão para o servidor (kill count individual)
-          socketService.emit('mission_progress', { enemyType: prevEnemy.type });
+          // Nota: O servidor agora controla o progresso da missão automaticamente
         }
       });
     }
@@ -314,6 +446,39 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange 
       localPlayerRef.current.position.z += pushZ;
     }
 
+    // Lógica de proximidade com pedra preciosa
+    if (preciousStone && !hasStoneInInventory) {
+      const stoneDx = preciousStone.x - playerPos.x;
+      const stoneDz = preciousStone.z - playerPos.z;
+      const stoneDistance = Math.sqrt(stoneDx * stoneDx + stoneDz * stoneDz);
+      const stoneInteractionRadius = 2.0;
+
+      if (stoneDistance < stoneInteractionRadius) {
+        setShowStonePrompt(true);
+      } else {
+        setShowStonePrompt(false);
+      }
+    } else {
+      setShowStonePrompt(false);
+    }
+
+    // Lógica de proximidade com Oráculo para entregar pedra
+    if (hasStoneInInventory) {
+      const oraclePosition = [30, 0, 30]; // Posição do Oráculo
+      const oracleDx = oraclePosition[0] - playerPos.x;
+      const oracleDz = oraclePosition[2] - playerPos.z;
+      const oracleDistance = Math.sqrt(oracleDx * oracleDx + oracleDz * oracleDz);
+      const oracleInteractionRadius = 3.0;
+
+      if (oracleDistance < oracleInteractionRadius) {
+        setShowOracleDeliveryPrompt(true);
+      } else {
+        setShowOracleDeliveryPrompt(false);
+      }
+    } else {
+      setShowOracleDeliveryPrompt(false);
+    }
+
     // Garante que o jogador fique no chão (mas permite pequeno bounce da caminhada)
     // Não fazer nada aqui - a altura é controlada pelo usePlayerControls
 
@@ -328,6 +493,20 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange 
     // Passar estado da habilidade para a UI
     if (onAbilityStateChange) {
       onAbilityStateChange(localPlayerRef.current?.abilityState);
+    }
+
+    // Passar estado da invulnerabilidade para a UI
+    if (onInvulnerabilityStateChange) {
+      onInvulnerabilityStateChange(localPlayerRef.current?.invulnerability);
+    }
+
+    // Passar estado dos prompts de pedra para a UI
+    if (onStonePromptsChange) {
+      onStonePromptsChange({
+        showStonePrompt,
+        showOracleDeliveryPrompt,
+        hasStoneInInventory
+      });
     }
   });
 
@@ -377,7 +556,15 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange 
       <TioUncle playerPosition={localPlayerRef.current?.position ? [localPlayerRef.current.position.x, localPlayerRef.current.position.y, localPlayerRef.current.position.z] : [0, 0, 0]} />
 
       {/* Oráculo */}
-      <Oracle playerPosition={localPlayerRef.current?.position ? [localPlayerRef.current.position.x, localPlayerRef.current.position.y, localPlayerRef.current.position.z] : [0, 0, 0]} />
+      <Oracle
+        playerPosition={localPlayerRef.current?.position ? [localPlayerRef.current.position.x, localPlayerRef.current.position.y, localPlayerRef.current.position.z] : [0, 0, 0]}
+        preciousStoneActive={preciousStone !== null && !hasStoneInInventory}
+      />
+
+      {/* Pedra Preciosa */}
+      {preciousStone && !hasStoneInInventory && (
+        <PreciousStone position={[preciousStone.x, preciousStone.y, preciousStone.z]} />
+      )}
 
       {/* NPCs passivos (não atacam nem tomam dano) */}
       {npcs.map((npc) => {

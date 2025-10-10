@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
 import * as THREE from 'three';
 import { useMissionStore } from '../../store/missionStore';
+import { useGameStore } from '../../store/gameStore';
 import socketService from '../../services/socket';
 import SpeechBubble from './SpeechBubble';
 
@@ -10,7 +11,7 @@ import SpeechBubble from './SpeechBubble';
  * Oracle - NPC que dá missões
  * Jogadores podem interagir pressionando E quando próximos
  */
-function Oracle({ playerPosition = [0, 0, 0] }) {
+function Oracle({ playerPosition = [0, 0, 0], preciousStoneActive = false }) {
   const meshRef = useRef();
   const ringRef = useRef();
   const [isPlayerNearby, setIsPlayerNearby] = useState(false);
@@ -61,13 +62,19 @@ function Oracle({ playerPosition = [0, 0, 0] }) {
       socketService.emit('mission_complete');
 
       setTimeout(() => setSpeechText(''), 4000);
+    } else if (activeMission.target === 'precious_stone' && preciousStoneActive) {
+      // Missão da pedra ativa mas ainda não foi coletada
+      setSpeechText('Procurem a pedra preciosa que apareceu no mapa!');
+      setTimeout(() => setSpeechText(''), 4000);
     }
   };
 
   // Atualizar balão de fala quando jogador se aproxima
   useEffect(() => {
     if (isPlayerNearby && !speechText) {
-      if (!activeMission) {
+      if (activeMission?.target === 'precious_stone' && preciousStoneActive) {
+        setSpeechText('A pedra preciosa está em algum lugar do mapa...');
+      } else if (!activeMission) {
         setSpeechText('Olá, jovens! Preciso de sua ajuda...');
       } else if (missionReadyToComplete) {
         setSpeechText('Retornaram vitoriosas! Venham receber a recompensa.');
@@ -75,11 +82,13 @@ function Oracle({ playerPosition = [0, 0, 0] }) {
     } else if (!isPlayerNearby && speechText && !activeMission) {
       setSpeechText('');
     }
-  }, [isPlayerNearby, activeMission, missionReadyToComplete]);
+  }, [isPlayerNearby, activeMission, missionReadyToComplete, preciousStoneActive]);
 
   // Determinar texto de interação
   let interactionText = '';
-  if (!activeMission) {
+  if (activeMission?.target === 'precious_stone' && preciousStoneActive) {
+    interactionText = 'Procurem a Pedra Preciosa!';
+  } else if (!activeMission) {
     interactionText = 'Pressione E - Nova Missão';
   } else if (missionReadyToComplete) {
     interactionText = 'Pressione E - Coletar Recompensa';

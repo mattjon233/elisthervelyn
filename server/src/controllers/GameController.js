@@ -61,9 +61,15 @@ export class GameController {
       // Missões colaborativas
       activeMission: null,
       missionProgress: 0,
-      teamGold: 0,
+      teamGold: 5000,
       // NPCs passivos (não atacam nem tomam dano)
-      npcs: []
+      npcs: [],
+      // Missão especial da pedra preciosa
+      preciousStone: {
+        spawned: false,
+        collected: false,
+        position: null
+      }
     };
 
     this.rooms.set(roomId, room);
@@ -265,8 +271,17 @@ export class GameController {
     if (!player) return;
 
     targetIds.forEach(targetId => {
+      const target = room.enemies.find(e => e.id === targetId);
+      const wasAlive = target && target.health > 0;
+
       // Se o cliente enviou um dano específico (habilidade), usa ele; senão, usa o dano padrão
       this.gameService.applyAttackDamage(player, room.enemies, targetId, damage);
+
+      // Se o inimigo morreu agora, processar morte (XP + progresso de missão)
+      const isDead = target && target.health <= 0;
+      if (wasAlive && isDead) {
+        this.handleEnemyDeath(roomId, target, socket);
+      }
     });
 
     // Remove inimigos mortos após um delay para a animação tocar no cliente
@@ -281,6 +296,32 @@ export class GameController {
 
     // Broadcast do novo estado dos inimigos e jogadores
     this.io.to(roomId).emit('game_state_updated', { enemies: room.enemies, players: room.players });
+  }
+
+  /**
+   * Processa a morte de um inimigo (XP + progresso de missão)
+   * Garante que cada morte seja processada apenas 1 vez
+   */
+  handleEnemyDeath(roomId, enemy, killerSocket) {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+
+    // Dar 10 XP para o jogador que matou
+    killerSocket.emit('xp_gained', { amount: 10, reason: 'monster_kill' });
+    console.log(`SERVER: ${killerSocket.id} ganhou 10 XP por matar ${enemy.id}`);
+
+    // Incrementar progresso da missão se for o tipo certo
+    if (room.activeMission && room.activeMission.target === enemy.type) {
+      room.missionProgress++;
+      console.log(`SERVER: Progresso da missão: ${room.missionProgress}/${room.activeMission.requiredCount}`);
+
+      // Broadcast atualização de missão
+      this.io.to(roomId).emit('mission_updated', {
+        activeMission: room.activeMission,
+        missionProgress: room.missionProgress,
+        teamGold: room.teamGold
+      });
+    }
   }
 
   /**
@@ -395,27 +436,7 @@ export class GameController {
     });
   }
 
-  /**
-   * Incrementar progresso da missão (quando mata inimigo)
-   */
-  handleMissionProgress(socket, { enemyType }) {
-    const roomId = this.playerRooms.get(socket.id);
-    const room = this.rooms.get(roomId);
-    if (!room || !room.gameStarted || !room.activeMission) return;
-
-    // Verificar se é o tipo certo de inimigo
-    if (room.activeMission.target !== enemyType) return;
-
-    room.missionProgress++;
-    console.log(`SERVER: Missão progresso ${room.missionProgress}/${room.activeMission.requiredCount}`);
-
-    // Broadcast para todos
-    this.io.to(roomId).emit('mission_updated', {
-      activeMission: room.activeMission,
-      missionProgress: room.missionProgress,
-      teamGold: room.teamGold
-    });
-  }
+  // handleMissionProgress removido - agora o progresso é automático em handleEnemyDeath
 
   /**
    * Completar missão e coletar recompensa
@@ -433,16 +454,61 @@ export class GameController {
 
     console.log(`SERVER: Sala ${roomId} completou missão! +100 ouro (Total: ${room.teamGold})`);
 
-    // Limpar missão
-    room.activeMission = null;
-    room.missionProgress = 0;
+    // Dar XP para TODOS os jogadores na sala (50 XP por completar missão)
+    const playersInRoom = room.players.length;
+    console.log(`SERVER: Dando 50 XP para ${playersInRoom} jogadores na sala ${roomId}`);
+    this.io.to(roomId).emit('xp_gained', { amount: 50, reason: 'mission_complete' });
 
-    // Broadcast para todos
-    this.io.to(roomId).emit('mission_updated', {
-      activeMission: room.activeMission,
-      missionProgress: room.missionProgress,
-      teamGold: room.teamGold
-    });
+    // Se foi a missão de zumbis (target: 'zombie'), spawnar pedra preciosa
+    if (room.activeMission.target === 'zombie' && !room.preciousStone.spawned) {
+      room.preciousStone.spawned = true;
+      // Posição aleatória no mapa (evitando mansão e centro)
+      const randomX = (Math.random() - 0.5) * 80; // -40 a 40
+      const randomZ = (Math.random() - 0.5) * 80;
+      room.preciousStone.position = { x: randomX, y: 0.5, z: randomZ };
+
+      console.log(`SERVER: Pedra preciosa spawnou em [${randomX.toFixed(2)}, ${randomZ.toFixed(2)}]`);
+
+      // Notificar todos sobre a pedra
+      this.io.to(roomId).emit('precious_stone_spawned', {
+        position: room.preciousStone.position
+      });
+
+      // Diálogo do Oráculo sobre a pedra
+      this.io.to(roomId).emit('dialogue_triggered', {
+        speaker: 'Oráculo',
+        text: 'Bem feito, heroínas! Mas espere... sinto uma energia mágica próxima. Uma pedra preciosa apareceu em algum lugar do mapa! Ela é pequena e brilhante. Tragam-na para mim e recompensarei vocês generosamente!'
+      });
+
+      // Criar missão da pedra preciosa
+      room.activeMission = {
+        id: 'find_precious_stone',
+        title: 'Encontrar a Pedra Preciosa',
+        description: 'Uma pedra mágica apareceu no mapa. Encontrem-na e levem ao Oráculo.',
+        type: 'collect',
+        target: 'precious_stone',
+        requiredCount: 1
+      };
+      room.missionProgress = 0;
+
+      // Broadcast missão da pedra
+      this.io.to(roomId).emit('mission_updated', {
+        activeMission: room.activeMission,
+        missionProgress: room.missionProgress,
+        teamGold: room.teamGold
+      });
+    } else {
+      // Limpar missão (caso não seja zumbi)
+      room.activeMission = null;
+      room.missionProgress = 0;
+
+      // Broadcast para todos
+      this.io.to(roomId).emit('mission_updated', {
+        activeMission: room.activeMission,
+        missionProgress: room.missionProgress,
+        teamGold: room.teamGold
+      });
+    }
   }
 
   /**
@@ -555,6 +621,138 @@ export class GameController {
     });
 
     // Broadcast do novo estado
+    this.io.to(roomId).emit('game_state_updated', { enemies: room.enemies, players: room.players });
+  }
+
+  /**
+   * Coletar pedra preciosa
+   */
+  handleCollectStone(socket) {
+    const roomId = this.playerRooms.get(socket.id);
+    const room = this.rooms.get(roomId);
+    if (!room || !room.gameStarted) return;
+
+    // Verificar se a pedra existe e não foi coletada
+    if (!room.preciousStone.spawned || room.preciousStone.collected) {
+      socket.emit('error', { message: 'Pedra não disponível!' });
+      return;
+    }
+
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player) return;
+
+    // Marcar como coletada
+    room.preciousStone.collected = true;
+    player.hasPreciousStone = true;
+
+    console.log(`SERVER: ${player.id} coletou a pedra preciosa!`);
+
+    // Atualizar progresso da missão (se existe missão da pedra)
+    if (room.activeMission && room.activeMission.target === 'precious_stone') {
+      room.missionProgress = 1;
+      console.log(`SERVER: Progresso da missão da pedra: 1/1`);
+    }
+
+    // Notificar todos
+    this.io.to(roomId).emit('stone_collected', {
+      playerId: socket.id
+    });
+
+    // Broadcast atualização de missão
+    this.io.to(roomId).emit('mission_updated', {
+      activeMission: room.activeMission,
+      missionProgress: room.missionProgress,
+      teamGold: room.teamGold
+    });
+
+    // Diálogo
+    this.io.to(roomId).emit('dialogue_triggered', {
+      speaker: 'Oráculo',
+      text: 'Excelente! Vocês encontraram a pedra! Tragam-na até mim para receber a recompensa!'
+    });
+  }
+
+  /**
+   * Entregar pedra ao Oráculo
+   */
+  handleDeliverStone(socket) {
+    const roomId = this.playerRooms.get(socket.id);
+    const room = this.rooms.get(roomId);
+    if (!room || !room.gameStarted) return;
+
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player || !player.hasPreciousStone) {
+      socket.emit('error', { message: 'Você não tem a pedra!' });
+      return;
+    }
+
+    // Dar recompensa
+    room.teamGold += 100;
+    player.hasPreciousStone = false;
+
+    console.log(`SERVER: ${player.id} entregou a pedra! +100 ouro (Total: ${room.teamGold})`);
+
+    // XP para quem entregou
+    socket.emit('xp_gained', { amount: 50, reason: 'stone_delivered' });
+
+    // Limpar missão da pedra
+    room.activeMission = null;
+    room.missionProgress = 0;
+
+    // Notificar todos
+    this.io.to(roomId).emit('stone_delivered', {
+      playerId: socket.id,
+      teamGold: room.teamGold
+    });
+
+    // Diálogo de agradecimento
+    this.io.to(roomId).emit('dialogue_triggered', {
+      speaker: 'Oráculo',
+      text: 'Maravilhoso! Esta pedra possui grande poder mágico. Aqui está sua recompensa: 100 de ouro e 50 XP! Continuem sua jornada, heroínas!'
+    });
+
+    // Atualizar estado (missão limpa)
+    this.io.to(roomId).emit('mission_updated', {
+      activeMission: room.activeMission,
+      missionProgress: room.missionProgress,
+      teamGold: room.teamGold
+    });
+  }
+
+  /**
+   * DEBUG: Matar todos os monstros (tecla B)
+   */
+  handleDebugKillAll(socket) {
+    const roomId = this.playerRooms.get(socket.id);
+    const room = this.rooms.get(roomId);
+    if (!room || !room.gameStarted) return;
+
+    console.log(`🔧 DEBUG: ${socket.id} matou todos os monstros!`);
+
+    const killedEnemies = [];
+
+    // Matar todos os inimigos exceto Rocket
+    room.enemies.forEach(enemy => {
+      if (enemy.health > 0 && enemy.type !== 'rocket') {
+        const wasAlive = true;
+        enemy.health = 0;
+        enemy.isDying = true;
+        killedEnemies.push({ id: enemy.id, type: enemy.type });
+
+        // Processar morte (XP + progresso de missão)
+        this.handleEnemyDeath(roomId, enemy, socket);
+      }
+    });
+
+    console.log(`🔧 DEBUG: ${killedEnemies.length} inimigos mortos`);
+
+    // Remover inimigos mortos após delay
+    setTimeout(() => {
+      room.enemies = room.enemies.filter(e => e.type === 'rocket' || e.health > 0);
+      this.io.to(roomId).emit('game_state_updated', { enemies: room.enemies, players: room.players });
+    }, 2000);
+
+    // Broadcast estado imediato
     this.io.to(roomId).emit('game_state_updated', { enemies: room.enemies, players: room.players });
   }
 
