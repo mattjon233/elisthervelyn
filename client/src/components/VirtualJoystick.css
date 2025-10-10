@@ -22,6 +22,7 @@
   width: 120px;
   height: 120px;
   pointer-events: auto;
+  z-index: 200;
 }
 
 .joystick-base {
@@ -53,7 +54,8 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.action-buttons {
+/* Botões de ação à direita (ataque e habilidade) */
+.action-buttons-right {
   position: absolute;
   bottom: 30px;
   right: 30px;
@@ -61,6 +63,19 @@
   flex-direction: column;
   gap: 15px;
   pointer-events: auto;
+  z-index: 200;
+}
+
+/* Botões auxiliares no centro (interação e poção) */
+.action-buttons-center {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 15px;
+  pointer-events: auto;
+  z-index: 200;
 }
 
 .action-btn {
@@ -105,6 +120,26 @@
   box-shadow: 0 0 20px #A8D8EA;
 }
 
+.interact-btn {
+  border-color: #FFD700;
+  background: rgba(255, 215, 0, 0.4);
+}
+
+.interact-btn:active {
+  background: rgba(255, 215, 0, 0.6);
+  box-shadow: 0 0 20px #FFD700;
+}
+
+.potion-btn {
+  border-color: #DA70D6;
+  background: rgba(218, 112, 214, 0.4);
+}
+
+.potion-btn:active {
+  background: rgba(218, 112, 214, 0.6);
+  box-shadow: 0 0 20px #DA70D6;
+}
+
 /* Tablets */
 @media (max-width: 768px) and (min-width: 481px) {
   .joystick-container {
@@ -138,9 +173,14 @@
     height: 40px;
   }
 
-  .action-buttons {
+  .action-buttons-right {
     bottom: 20px;
     right: 20px;
+    gap: 10px;
+  }
+
+  .action-buttons-center {
+    bottom: 20px;
     gap: 10px;
   }
 

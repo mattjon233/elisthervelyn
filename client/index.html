@@ -17,11 +17,34 @@
         overflow: hidden;
         touch-action: none;
         background: linear-gradient(135deg, #FFB6D9 0%, #D4A5D4 50%, #A8D8EA 100%);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
       }
 
       #root {
         width: 100vw;
         height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+      }
+
+      /* Prevenir seleção de texto em mobile */
+      * {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      /* Suporte para notch em dispositivos iOS */
+      @supports (padding: max(0px)) {
+        body {
+          padding-left: max(0px, env(safe-area-inset-left));
+          padding-right: max(0px, env(safe-area-inset-right));
+          padding-top: max(0px, env(safe-area-inset-top));
+          padding-bottom: max(0px, env(safe-area-inset-bottom));
+        }
       }
     </style>
   </head>

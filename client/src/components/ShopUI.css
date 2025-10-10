@@ -78,3 +78,63 @@
   margin-top: 2rem;
   font-weight: bold;
 }
+
+/* --- Responsividade Mobile --- */
+@media (max-width: 768px) {
+  .shop-ui-modal {
+    width: 95%;
+    max-width: none;
+    padding: 1.5rem;
+    margin: 10px;
+  }
+
+  .shop-ui-modal h2 {
+    font-size: 1.5rem;
+  }
+
+  .upgrades-container {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .upgrade-card {
+    width: 100%;
+  }
+
+  .close-button {
+    width: 35px;
+    height: 35px;
+    font-size: 1.4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .shop-ui-modal {
+    padding: 1rem;
+  }
+
+  .shop-ui-modal h2 {
+    font-size: 1.3rem;
+  }
+
+  .upgrade-card {
+    padding: 0.8rem;
+  }
+
+  .upgrade-card h3 {
+    font-size: 1rem;
+  }
+
+  .upgrade-card p {
+    font-size: 0.9rem;
+  }
+
+  .upgrade-card button {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+  }
+
+  .gold-info {
+    font-size: 0.9rem;
+  }
+}

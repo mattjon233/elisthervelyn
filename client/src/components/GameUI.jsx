@@ -36,30 +36,27 @@ function GameUI({ character, killCount = 0, abilityState }) {
   };
 
   const handleAttack = () => {
-    // Simular clique do mouse para ativar ataque
-    const event = new MouseEvent('mousedown', {
-      button: 0,
-      bubbles: true,
-      cancelable: true
-    });
+    console.log('🗡️ Botão de ataque pressionado');
+    const event = new CustomEvent('mobileInput', { detail: { action: 'attack' } });
     window.dispatchEvent(event);
-
-    setTimeout(() => {
-      const upEvent = new MouseEvent('mouseup', {
-        button: 0,
-        bubbles: true,
-        cancelable: true
-      });
-      window.dispatchEvent(upEvent);
-    }, 100);
   };
 
   const handleSpecial = () => {
-    // Simular pressionamento da tecla Q
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'q', bubbles: true }));
-    setTimeout(() => {
-      window.dispatchEvent(new KeyboardEvent('keyup', { key: 'q', bubbles: true }));
-    }, 100);
+    console.log('✨ Botão de habilidade pressionado');
+    const event = new CustomEvent('mobileInput', { detail: { action: 'ability' } });
+    window.dispatchEvent(event);
+  };
+
+  const handleInteract = () => {
+    console.log('💬 Botão de interação pressionado');
+    const event = new CustomEvent('mobileInput', { detail: { action: 'interact' } });
+    window.dispatchEvent(event);
+  };
+
+  const handleUsePotion = () => {
+    console.log('💊 Botão de poção pressionado');
+    const event = new CustomEvent('mobileInput', { detail: { action: 'potion' } });
+    window.dispatchEvent(event);
   };
 
   const handleRotateLeft = () => {
@@ -114,10 +111,13 @@ function GameUI({ character, killCount = 0, abilityState }) {
           onMove={handleJoystickMove}
           onAttack={handleAttack}
           onSpecial={handleSpecial}
+          onInteract={handleInteract}
+          onUsePotion={handleUsePotion}
         />
       </div>
 
-      <div className="hud-bottom-right">
+      {/* HUD de Habilidades - Apenas Desktop */}
+      <div className="hud-bottom-right desktop-only">
         {/* Poção à esquerda da habilidade Q */}
         <div className={`hud-widget potion-widget ${potion ? 'has-potion' : 'no-potion'}`}>
           <div className="potion-icon">💊</div>

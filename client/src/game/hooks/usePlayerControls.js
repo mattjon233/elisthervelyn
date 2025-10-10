@@ -35,7 +35,7 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
 
       const key = e.key.toLowerCase();
       // Inclui 'q' para habilidade e 'c' para poção
-      if (['w', 'a', 's', 'd', ' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'f', 'j', 'q', 'c'].includes(key)) {
+      if (['w', 'a', 's', 'd', ' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'f', 'j', 'q', 'c', 'e'].includes(key)) {
         e.preventDefault();
 
         setKeys((prev) => ({
@@ -49,6 +49,35 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
           ability: prev.ability || key === 'q', // Habilidade com Q
           potion: prev.potion || key === 'c', // Poção com C
         }));
+      }
+    };
+
+    // Handler para eventos mobile customizados
+    const handleMobileInput = (e) => {
+      if (isDead) return;
+
+      const { action } = e.detail;
+      console.log('🎮 Mobile input recebido:', action);
+
+      if (action === 'attack') {
+        setKeys((prev) => ({ ...prev, attack: true }));
+        setTimeout(() => {
+          setKeys((prev) => ({ ...prev, attack: false }));
+        }, 100);
+      } else if (action === 'ability') {
+        setKeys((prev) => ({ ...prev, ability: true }));
+        setTimeout(() => {
+          setKeys((prev) => ({ ...prev, ability: false }));
+        }, 100);
+      } else if (action === 'potion') {
+        setKeys((prev) => ({ ...prev, potion: true }));
+        // O reset de potion é feito automaticamente no useEffect de poção
+      } else if (action === 'interact') {
+        // Disparar evento de teclado E para interação com NPCs
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'e', bubbles: true }));
+        setTimeout(() => {
+          window.dispatchEvent(new KeyboardEvent('keyup', { key: 'e', bubbles: true }));
+        }, 100);
       }
     };
 
@@ -106,6 +135,7 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
     window.addEventListener('contextmenu', handleContextMenu);
     window.addEventListener('mousedown', handleMouseDown);
     window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('mobileInput', handleMobileInput); // Listener para controles mobile
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
@@ -114,6 +144,7 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
       window.removeEventListener('contextmenu', handleContextMenu);
       window.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('mobileInput', handleMobileInput);
     };
   }, [isDead]);
 
@@ -397,6 +428,7 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
 
   return {
     keys,
+    setKeys, // Expor setKeys para controles mobile
     isMoving: keys.w || keys.a || keys.s || keys.d,
     isAttacking,
     canAttack,

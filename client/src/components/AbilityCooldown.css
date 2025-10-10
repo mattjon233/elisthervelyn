@@ -46,3 +46,36 @@
   padding: 2px 4px;
   border-radius: 4px;
 }
+
+/* --- Responsividade Mobile --- */
+@media (max-width: 768px) {
+  .ability-cooldown {
+    width: 60px;
+    height: 60px;
+  }
+
+  .ability-icon {
+    font-size: 28px;
+  }
+
+  .ability-key {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .ability-cooldown {
+    width: 55px;
+    height: 55px;
+    border-width: 2px;
+  }
+
+  .ability-icon {
+    font-size: 26px;
+  }
+
+  .ability-key {
+    font-size: 11px;
+    padding: 1px 3px;
+  }
+}

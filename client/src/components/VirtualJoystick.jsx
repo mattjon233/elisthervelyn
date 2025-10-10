@@ -4,7 +4,7 @@ import './VirtualJoystick.css';
 /**
  * Joystick Virtual para controle touch em dispositivos móveis
  */
-function VirtualJoystick({ onMove, onAttack, onSpecial }) {
+function VirtualJoystick({ onMove, onAttack, onSpecial, onInteract, onUsePotion }) {
   const joystickRef = useRef(null);
   const stickRef = useRef(null);
   const [active, setActive] = useState(false);
@@ -106,25 +106,77 @@ function VirtualJoystick({ onMove, onAttack, onSpecial }) {
         </div>
       </div>
 
-      {/* Botões de ação */}
-      <div className="action-buttons">
+      {/* Botões de ação à direita */}
+      <div className="action-buttons-right">
+        {/* Botão de Ataque */}
         <button
           className="action-btn attack-btn"
           onTouchStart={(e) => {
             e.preventDefault();
+            e.stopPropagation();
+            console.log('🗡️ Ataque touch');
             if (onAttack) onAttack();
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
           }}
         >
           ⚔️
         </button>
+
+        {/* Botão de Habilidade Especial */}
         <button
           className="action-btn special-btn"
           onTouchStart={(e) => {
             e.preventDefault();
+            e.stopPropagation();
+            console.log('✨ Habilidade touch');
             if (onSpecial) onSpecial();
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
           }}
         >
           ✨
+        </button>
+      </div>
+
+      {/* Botões auxiliares no centro inferior */}
+      <div className="action-buttons-center">
+        {/* Botão de Interação (E) */}
+        <button
+          className="action-btn interact-btn"
+          onTouchStart={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('💬 Interação touch');
+            if (onInteract) onInteract();
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
+          💬
+        </button>
+
+        {/* Botão de Poção */}
+        <button
+          className="action-btn potion-btn"
+          onTouchStart={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('💊 Poção touch');
+            if (onUsePotion) onUsePotion();
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
+          💊
         </button>
       </div>
     </div>
