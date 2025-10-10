@@ -4,79 +4,248 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.7);
+  background: linear-gradient(135deg, rgba(138, 43, 226, 0.8), rgba(75, 0, 130, 0.8));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  animation: overlayFadeIn 0.3s ease-out;
+}
+
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .shop-ui-modal {
-  background: #fff;
-  padding: 2rem;
-  border-radius: 10px;
-  width: 80%;
-  max-width: 600px;
+  background: linear-gradient(135deg, #FFE4E1 0%, #FFF0F5 50%, #E6F3FF 100%);
+  padding: 1.5rem;
+  border-radius: 25px;
+  width: 85%;
+  max-width: 650px;
+  max-height: 85vh;
+  overflow-y: auto;
   text-align: center;
   position: relative;
-  border: 3px solid #8B4513;
-  color: #333;
+  border: 4px solid transparent;
+  background-clip: padding-box;
+  box-shadow:
+    0 0 0 4px #FFD700,
+    0 12px 30px rgba(255, 215, 0, 0.5),
+    inset 0 4px 15px rgba(255, 255, 255, 0.8);
+  color: #2C1810;
+  animation: modalBounceIn 0.5s ease-out;
+}
+
+@keyframes modalBounceIn {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.shop-ui-modal h2 {
+  font-size: 1.6rem;
+  margin-bottom: 0.6rem;
+  background: linear-gradient(135deg, #FF6347, #FF1493, #9370DB);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 2px 2px 4px rgba(255, 215, 0, 0.3);
+  animation: titleShimmer 3s ease-in-out infinite;
+}
+
+@keyframes titleShimmer {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.2); }
+}
+
+.shop-ui-modal p {
+  font-size: 0.95rem;
+  color: #4B0082;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
 }
 
 .close-button {
   position: absolute;
   top: 10px;
   right: 10px;
-  background: #8B4513;
+  background: linear-gradient(135deg, #FF6347, #FF1493);
   color: white;
-  border: none;
+  border: 3px solid #FFD700;
   border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  font-size: 1.2rem;
+  width: 38px;
+  height: 38px;
+  font-size: 1.3rem;
+  font-weight: bold;
   cursor: pointer;
+  box-shadow: 0 4px 15px rgba(255, 20, 147, 0.5);
+  transition: all 0.3s ease;
+  pointer-events: all;
+}
+
+.close-button:hover {
+  transform: rotate(90deg) scale(1.1);
+  box-shadow: 0 6px 20px rgba(255, 20, 147, 0.8);
 }
 
 .upgrades-container {
   display: flex;
   justify-content: space-around;
-  margin-top: 2rem;
+  gap: 1rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
 }
 
 .upgrade-card {
-  border: 2px solid #ccc;
+  background: linear-gradient(135deg, rgba(255, 218, 185, 0.95), rgba(255, 182, 193, 0.95));
+  border: 3px solid #FFD700;
   padding: 1rem;
-  border-radius: 8px;
+  border-radius: 18px;
   width: 30%;
+  min-width: 180px;
+  box-shadow:
+    0 6px 15px rgba(255, 105, 180, 0.4),
+    inset 0 3px 10px rgba(255, 255, 255, 0.6);
+  transition: all 0.3s ease;
+  animation: cardFloat 3s ease-in-out infinite;
+  pointer-events: all;
+}
+
+.upgrade-card:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.upgrade-card:nth-child(2) {
+  animation-delay: 0.3s;
+}
+
+.upgrade-card:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+@keyframes cardFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+}
+
+.upgrade-card:hover {
+  transform: translateY(-10px) scale(1.05);
+  box-shadow:
+    0 12px 30px rgba(255, 105, 180, 0.6),
+    inset 0 3px 15px rgba(255, 255, 255, 0.8);
+  border-color: #FFA500;
 }
 
 .upgrade-card.bought {
-  background-color: #e0e0e0;
-  border-color: #8B4513;
+  background: linear-gradient(135deg, rgba(144, 238, 144, 0.95), rgba(152, 251, 152, 0.95));
+  border-color: #32CD32;
+  box-shadow:
+    0 8px 20px rgba(50, 205, 50, 0.4),
+    inset 0 3px 10px rgba(255, 255, 255, 0.6);
+}
+
+.upgrade-card.bought::after {
+  content: '✓';
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #32CD32;
+  color: white;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  box-shadow: 0 3px 10px rgba(50, 205, 50, 0.6);
+}
+
+.upgrade-icon {
+  font-size: 2.2rem;
+  margin-bottom: 0.3rem;
+  animation: iconBounce 2s ease-in-out infinite;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+@keyframes iconBounce {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50% { transform: translateY(-5px) scale(1.1); }
 }
 
 .upgrade-card h3 {
   margin-top: 0;
+  font-size: 1.1rem;
+  color: #FF1493;
+  text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.8);
+  margin-bottom: 0.5rem;
+}
+
+.upgrade-card p {
+  font-size: 0.9rem;
+  color: #4B0082;
+  margin-bottom: 0.7rem;
+  font-weight: 500;
 }
 
 .upgrade-card button {
-  margin-top: 1rem;
-  padding: 0.5rem 1rem;
-  background-color: #8B4513;
+  margin-top: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: linear-gradient(135deg, #9370DB, #8A2BE2);
   color: white;
-  border: none;
-  border-radius: 5px;
+  border: 3px solid #FFD700;
+  border-radius: 12px;
   cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: bold;
+  box-shadow: 0 4px 12px rgba(147, 112, 219, 0.5);
+  transition: all 0.3s ease;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.upgrade-card button:hover:not(:disabled) {
+  transform: scale(1.1);
+  background: linear-gradient(135deg, #8A2BE2, #9370DB);
+  box-shadow: 0 8px 20px rgba(138, 43, 226, 0.8);
 }
 
 .upgrade-card button:disabled {
-  background-color: #A9A9A9;
+  background: linear-gradient(135deg, #A9A9A9, #808080);
   cursor: not-allowed;
+  border-color: #696969;
+  box-shadow: none;
+  opacity: 0.7;
 }
 
 .gold-info {
-  margin-top: 2rem;
+  margin-top: 1rem;
   font-weight: bold;
+  font-size: 1.05rem;
+  padding: 0.7rem 1.5rem;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 165, 0, 0.3));
+  border-radius: 18px;
+  border: 3px solid #FFD700;
+  display: inline-block;
+  color: #FF8C00;
+  text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4), inset 0 2px 8px rgba(255, 255, 255, 0.5);
+  animation: goldPulse 2s ease-in-out infinite;
+}
+
+@keyframes goldPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4), inset 0 2px 8px rgba(255, 255, 255, 0.5);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.7), inset 0 2px 10px rgba(255, 255, 255, 0.7);
+  }
 }
 
 /* --- Responsividade Mobile --- */
@@ -84,45 +253,61 @@
   .shop-ui-modal {
     width: 95%;
     max-width: none;
-    padding: 1.5rem;
+    padding: 2rem 1.5rem;
     margin: 10px;
   }
 
   .shop-ui-modal h2 {
-    font-size: 1.5rem;
+    font-size: 1.8rem;
+  }
+
+  .shop-ui-modal p {
+    font-size: 1rem;
   }
 
   .upgrades-container {
     flex-direction: column;
-    gap: 1rem;
+    gap: 1.5rem;
   }
 
   .upgrade-card {
     width: 100%;
+    min-width: auto;
   }
 
   .close-button {
-    width: 35px;
-    height: 35px;
-    font-size: 1.4rem;
+    width: 40px;
+    height: 40px;
+    font-size: 1.3rem;
+  }
+
+  .gold-info {
+    font-size: 1.1rem;
+    padding: 0.8rem 1.5rem;
   }
 }
 
 @media (max-width: 480px) {
   .shop-ui-modal {
-    padding: 1rem;
+    padding: 1.5rem 1rem;
   }
 
   .shop-ui-modal h2 {
-    font-size: 1.3rem;
+    font-size: 1.5rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .shop-ui-modal p {
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
   }
 
   .upgrade-card {
-    padding: 0.8rem;
+    padding: 1.2rem;
   }
 
   .upgrade-card h3 {
-    font-size: 1rem;
+    font-size: 1.2rem;
   }
 
   .upgrade-card p {
@@ -130,11 +315,73 @@
   }
 
   .upgrade-card button {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.9rem;
+    padding: 0.7rem 1.2rem;
+    font-size: 0.95rem;
   }
 
   .gold-info {
+    font-size: 1rem;
+    padding: 0.7rem 1.2rem;
+    margin-top: 1.5rem;
+  }
+
+  .close-button {
+    width: 38px;
+    height: 38px;
+    font-size: 1.2rem;
+    top: 12px;
+    right: 12px;
+  }
+}
+
+/* Landscape mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+  .shop-ui-modal {
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 1.5rem;
+  }
+
+  .shop-ui-modal h2 {
+    font-size: 1.6rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .shop-ui-modal p {
     font-size: 0.9rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .upgrades-container {
+    flex-direction: row;
+    margin-top: 1rem;
+    gap: 1rem;
+  }
+
+  .upgrade-card {
+    width: 30%;
+    padding: 1rem;
+  }
+
+  .upgrade-card h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .upgrade-card p {
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .upgrade-card button {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+  }
+
+  .gold-info {
+    font-size: 1rem;
+    padding: 0.6rem 1.2rem;
+    margin-top: 1rem;
   }
 }
