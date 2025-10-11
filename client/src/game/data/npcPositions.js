@@ -6,7 +6,7 @@
 // Posições dos NPCs
 export const oraclePosition = { x: 35, y: 0, z: 35 };
 export const tiaRosePosition = { x: -35, y: 0, z: -35 };
-export const tioUnclePosition = { x: 35, y: 0, z: -18 };
+export const tioUnclePosition = { x: 40, y: 0, z: 10 };
 
 /**
  * Array de obstáculos para os NPCs, usado pelo sistema de colisão manual.
