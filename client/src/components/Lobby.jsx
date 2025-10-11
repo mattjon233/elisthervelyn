@@ -15,9 +15,9 @@ function Lobby({ onGameStart }) {
   const { reset: resetMissions } = useMissionStore();
 
   const characters = [
-    { id: 'esther', name: 'Esther', class: 'Arqueira', color: '#FFB6D9' },
-    { id: 'elissa', name: 'Elissa', class: 'Guerreira', color: '#D4A5D4' },
-    { id: 'evelyn', name: 'Evelyn', class: 'Maga', color: '#A8D8EA' }
+    { id: 'esther', name: 'Esther', class: 'Arqueira', color: '#87CEEB' },
+    { id: 'elissa', name: 'Elissa', class: 'Guerreira', color: '#C71585' },
+    { id: 'evelyn', name: 'Evelyn', class: 'Maga', color: '#FFB6C1' }
   ];
 
   useEffect(() => {

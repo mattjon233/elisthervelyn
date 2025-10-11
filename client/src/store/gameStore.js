@@ -46,8 +46,11 @@ export const useGameStore = create((set, get) => ({
   lastHealTime: null,
   isCinematicOpen: true, // A cinemática de introdução começa aberta
   isSkillTreeOpen: false,
+  showMissionChoice: false, // Para exibir a UI de escolha de missão
+  missionChoiceData: null,
 
   // Actions
+  setShowMissionChoice: (show, data) => set({ showMissionChoice: show, missionChoiceData: data }),
   setIsCinematicOpen: (isOpen) => set({ isCinematicOpen: isOpen }),
   setIsSkillTreeOpen: (isOpen) => set({ isSkillTreeOpen: isOpen }),
   triggerDamageEffect: () => set({ lastDamageTime: Date.now() }),

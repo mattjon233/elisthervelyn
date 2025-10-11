@@ -172,5 +172,25 @@
       "Olá de novo, querida! Precisa de uma poção?"
     ],
     "tipo": "saudacao"
+  },
+
+  "coconaro_briefing": {
+    "momento": "Oráculo oferece a missão do Coconaro",
+    "oraculo": [
+      "Sinto a fonte do mal... Coconaro, o guardião dos zumbis, despertou!",
+      "Se o matarem, todos os zumbis da região perecerão. Mas cuidado, ele é poderoso.",
+      "Derrotem mais zumbis para se fortalecerem, ou enfrentem o guardião agora. A escolha é de vocês."
+    ],
+    "tipo": "decisao"
+  },
+
+  "coconaro_derrotado": {
+    "momento": "Após entregar o Coração de Coconaro",
+    "oraculo": [
+      "Vocês conseguiram! O Coração de Coconaro prova sua vitória!",
+      "A terra está finalmente livre da ameaça zumbi. A paz foi restaurada... por enquanto.",
+      "Obrigado, heroínas!"
+    ],
+    "tipo": "vitoria_final"
   }
 }

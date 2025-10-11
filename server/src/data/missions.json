@@ -111,5 +111,21 @@
     "dialogo_dano_1": "boss_dano_1",
     "dialogo_dano_2": "boss_dano_2",
     "dialogo_derrotado": "boss_derrotado"
+  },
+
+  "mission_coconaro_boss": {
+    "id": "coconaro_boss_fight",
+    "nome": "A Ameaça de Coconaro",
+    "descricao": "O Oráculo revelou a fonte do mal. Derrote Coconaro, o guardião dos zumbis, para purificar a região.",
+    "objetivos": {
+      "tipo": "coletar_e_matar",
+      "alvos": {
+        "cocos": 20,
+        "coconaro": 1
+      },
+      "texto_ui": "Pegue os cocos do Coconaro para matar ele"
+    },
+    "dialogo_inicio": "coconaro_briefing",
+    "dialogo_completo": "coconaro_derrotado"
   }
 }

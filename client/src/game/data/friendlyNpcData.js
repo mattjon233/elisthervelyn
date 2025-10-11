@@ -33,6 +33,14 @@ const friendlyNpcData = [
       'As três irmãs são nossa única esperança.',
     ],
   },
+  {
+    id: 'npc_baba_yaga',
+    position: { x: -32.5, y: 0, z: 34 },
+    model: 'baba_yaga',
+    dialogue: [
+      'Oi eu sou o baba yaga, vcs viram meu irmão yaga baba por ai?',
+    ],
+  },
 ];
 
 export default friendlyNpcData;

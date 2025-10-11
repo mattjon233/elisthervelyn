@@ -222,6 +222,8 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
     if (!isLocalPlayer || !meshRef.current) return;
 
     const interval = setInterval(() => {
+      if (!meshRef.current) return; // Verifica novamente no intervalo
+
       const pos = meshRef.current.position;
       const rot = meshRef.current.rotation;
 

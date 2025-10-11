@@ -17,7 +17,7 @@ function GameUI({ character, killCount = 0, abilityState, invulnerabilityState, 
   } = useGameStore();
   const { teamGold, activeMission } = useMissionStore();
   const { potion } = useShopStore();
-  const { currentLevel, currentXP, xpToNextLevel, skillPoints } = useLevelStore();
+  const { currentLevel, currentXP, xpToNextLevel, skillPoints, bonuses } = useLevelStore();
 
   // Encontra os dados do jogador local na lista de jogadores
   const localPlayer = players.find(p => p.id === playerId);
@@ -98,7 +98,13 @@ function GameUI({ character, killCount = 0, abilityState, invulnerabilityState, 
       <div className="hud-top">
         {/* Widget de Informações do Jogador */}
         <div className="hud-widget character-info-widget">
-          <div className="character-portrait" style={{ backgroundColor: character?.color || '#FFB6D9' }}></div>
+          <div
+            className="character-portrait"
+            style={{
+              backgroundColor: character?.color || '#FFB6D9',
+              backgroundImage: character?.name ? `url(/img/${character.name.toLowerCase()}.jpg)` : 'none'
+            }}
+          ></div>
           <div className="character-details">
             <div className="character-name-row">
               <div className="character-name">{character?.name || 'Jogadora'}</div>
@@ -168,6 +174,7 @@ function GameUI({ character, killCount = 0, abilityState, invulnerabilityState, 
           onInteract={handleInteract}
           onUsePotion={handleUsePotion}
           onInvulnerability={handleInvulnerability}
+          hasInvulnerability={bonuses.hasInvulnerability}
         />
       </div>
 

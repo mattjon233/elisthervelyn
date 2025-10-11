@@ -23,10 +23,13 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
     attack: false, // Ataque (clique do mouse ou tecla)
     ability: false, // Habilidade especial (Q)
     potion: false, // Usar poção (C)
+    b: false, // DEBUG: Matar todos
+    n: false, // DEBUG: Completar missão
   });
 
   const moveDirection = useRef(new THREE.Vector3());
   const smoothVelocity = useRef(new THREE.Vector3());
+  const keysPressed = useRef({}); // Para registrar estado de teclas de debug
 
   // Sistema de ataque com cooldown
   const [isAttacking, setIsAttacking] = useState(false);
@@ -40,7 +43,7 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
 
       const key = e.key.toLowerCase();
       // Inclui 'q' para habilidade, 'c' para poção e 't' para invulnerabilidade
-      if (['w', 'a', 's', 'd', ' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'f', 'j', 'q', 'c', 'e', 't'].includes(key)) {
+      if (['w', 'a', 's', 'd', ' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'f', 'j', 'q', 'c', 'e', 't', 'b', 'n'].includes(key)) {
         e.preventDefault();
 
         setKeys((prev) => ({
@@ -54,6 +57,8 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
           ability: prev.ability || key === 'q', // Habilidade com Q
           potion: prev.potion || key === 'c', // Poção com C
           invulnerability: prev.invulnerability || key === 't', // Invulnerabilidade com T
+          b: prev.b || key === 'b',
+          n: prev.n || key === 'n',
         }));
       }
     };
@@ -105,6 +110,8 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
         ability: prev.ability && key !== 'q',
         potion: prev.potion && key !== 'c',
         invulnerability: prev.invulnerability && key !== 't',
+        b: prev.b && key !== 'b',
+        n: prev.n && key !== 'n',
       }));
     };
 
@@ -120,6 +127,8 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
         ability: false,
         potion: false,
         invulnerability: false,
+        b: false,
+        n: false,
       });
     };
 
@@ -181,6 +190,24 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
   // Atualizar movimento a cada frame
   useFrame((state, delta) => {
     if (!playerRef.current || isDead) return; // Não mover se morto
+
+    // DEBUG: Matar todos os monstros (B)
+    if (keys.b && !keysPressed.current.b) {
+      keysPressed.current.b = true;
+      console.log('🔧 DEBUG: Matando todos os monstros');
+      socketService.emit('debug_kill_all');
+    }
+
+    // DEBUG: Completar missão atual (N)
+    if (keys.n && !keysPressed.current.n) {
+      keysPressed.current.n = true;
+      console.log('🔧 DEBUG: Completando missão atual');
+      socketService.emit('debug_complete_mission');
+    }
+
+    // Cleanup para teclas de debug
+    if (!keys.b) keysPressed.current.b = false;
+    if (!keys.n) keysPressed.current.n = false;
 
     // Resetar direção
     moveDirection.current.set(0, 0, 0);

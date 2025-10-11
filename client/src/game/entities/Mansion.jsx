@@ -305,14 +305,37 @@ function Mansion() {
 
       {/* JANELAS DO SEGUNDO ANDAR */}
       {/* Janela frontal esquerda */}
-      <mesh position={[-4, 6, 0.9]} castShadow>
-        <boxGeometry args={[1.5, 2, 0.1]} />
-        <meshStandardMaterial color="#87CEEB" transparent opacity={0.3} />
+      <mesh position={[-4, 6, 0.85]} castShadow>
+        <boxGeometry args={[1.5, 2, 0.05]} />
+        <meshStandardMaterial
+          color="#4682B4"
+          emissive="#87CEEB"
+          emissiveIntensity={0.2}
+          roughness={0.3}
+          metalness={0.5}
+        />
       </mesh>
+      {/* Moldura da janela esquerda */}
+      <mesh position={[-4, 6, 0.82]} castShadow>
+        <boxGeometry args={[1.6, 2.1, 0.02]} />
+        <meshStandardMaterial color={woodColor} roughness={0.8} />
+      </mesh>
+
       {/* Janela frontal direita */}
-      <mesh position={[4, 6, 0.9]} castShadow>
-        <boxGeometry args={[1.5, 2, 0.1]} />
-        <meshStandardMaterial color="#87CEEB" transparent opacity={0.3} />
+      <mesh position={[4, 6, 0.85]} castShadow>
+        <boxGeometry args={[1.5, 2, 0.05]} />
+        <meshStandardMaterial
+          color="#4682B4"
+          emissive="#87CEEB"
+          emissiveIntensity={0.2}
+          roughness={0.3}
+          metalness={0.5}
+        />
+      </mesh>
+      {/* Moldura da janela direita */}
+      <mesh position={[4, 6, 0.82]} castShadow>
+        <boxGeometry args={[1.6, 2.1, 0.02]} />
+        <meshStandardMaterial color={woodColor} roughness={0.8} />
       </mesh>
 
       {/* ==================== TELHADO ==================== */}

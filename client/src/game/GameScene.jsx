@@ -14,10 +14,13 @@ import FriendlyNPC from './entities/FriendlyNPC';
 import friendlyNpcData from './data/friendlyNpcData';
 import Zombie from './entities/Zombie';
 import Ghost from './entities/Ghost';
+import Slime from './entities/Slime';
 import Rocket from './entities/Rocket';
 import DeathAnimation from './entities/DeathAnimation';
 import TioUncle from './entities/TioUncle';
 import PreciousStone from './entities/PreciousStone';
+import Coconaro from './entities/Coconaro';
+import Coco from './entities/Coco';
 import { useGameStore } from '../store/gameStore';
 import { useMissionStore } from '../store/missionStore';
 import { useShopStore } from '../store/shopStore';
@@ -50,10 +53,10 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
   const [dyingEnemies, setDyingEnemies] = useState([]);
   const lastAttackTimeRef = useRef(0);
   const hitEnemiesRef = useRef({});
-  const [preciousStone, setPreciousStone] = useState(null);
-  const [hasStoneInInventory, setHasStoneInInventory] = useState(false);
+  const [preciousStones, setPreciousStones] = useState([]);
+  const [closestStone, setClosestStone] = useState(null);
   const [showStonePrompt, setShowStonePrompt] = useState(false);
-  const [showOracleDeliveryPrompt, setShowOracleDeliveryPrompt] = useState(false);
+  const [coconuts, setCoconuts] = useState([]); // Estado para os cocos
   const [killCount, setKillCount] = useState(0);
 
   useEffect(() => {
@@ -116,30 +119,41 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
   }, [playerId]);
 
   useEffect(() => {
-    const handleStoneSpawned = ({ position }) => {
-      setPreciousStone(position);
+    const handleStonesSpawned = ({ stones }) => {
+      setPreciousStones(stones);
     };
-    const handleStoneCollected = ({ playerId: collectorId }) => {
-      setPreciousStone(null);
-      if (collectorId === playerId) {
-        setHasStoneInInventory(true);
-      }
+    const handleStoneCollected = ({ stoneId }) => {
+      setPreciousStones(prev => prev.filter(s => s.id !== stoneId));
     };
-    const handleStoneDelivered = ({ playerId: delivererId }) => {
-      if (delivererId === playerId) {
-        setHasStoneInInventory(false);
-        setShowOracleDeliveryPrompt(false);
-      }
-    };
-    socketService.on('precious_stone_spawned', handleStoneSpawned);
+
+    socketService.on('precious_stones_spawned', handleStonesSpawned);
     socketService.on('stone_collected', handleStoneCollected);
-    socketService.on('stone_delivered', handleStoneDelivered);
+
     return () => {
-      socketService.off('precious_stone_spawned', handleStoneSpawned);
+      socketService.off('precious_stones_spawned', handleStonesSpawned);
       socketService.off('stone_collected', handleStoneCollected);
-      socketService.off('stone_delivered', handleStoneDelivered);
     };
   }, [playerId]);
+
+  useEffect(() => {
+    const handleCoconaroMissionStart = ({ coconuts }) => {
+      console.log('CLIENT: Missão Coconaro iniciada! Cocos recebidos:', coconuts);
+      setCoconuts(coconuts);
+    };
+
+    const handleCoconutCollected = ({ coconutId }) => {
+      console.log(`CLIENT: Coco ${coconutId} foi coletado.`);
+      setCoconuts(prev => prev.filter(c => c.id !== coconutId));
+    };
+
+    socketService.on('coconaro_mission_started', handleCoconaroMissionStart);
+    socketService.on('coconut_collected', handleCoconutCollected);
+
+    return () => {
+      socketService.off('coconaro_mission_started', handleCoconaroMissionStart);
+      socketService.off('coconut_collected', handleCoconutCollected);
+    };
+  }, []);
 
   useEffect(() => {
     const handlePotionUsed = ({ healAmount, newHealth }) => {
@@ -167,50 +181,30 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
   }, [potion, isDead, usePotion]);
 
   useEffect(() => {
-    const handleDebugKey = (e) => {
-      if ((e.key === 'b' || e.key === 'B') && !isDead) {
-        socketService.emit('debug_kill_all');
-      }
-      if ((e.key === 'n' || e.key === 'N') && !isDead) {
-        useLevelStore.getState().addXP(1000);
-      }
-      if ((e.key === 'm' || e.key === 'M') && !isDead) {
-        const state = useLevelStore.getState();
-      }
-    };
-    window.addEventListener('keydown', handleDebugKey);
-    return () => window.removeEventListener('keydown', handleDebugKey);
-  }, [isDead]);
-
-  useEffect(() => {
     const handleInteraction = (e) => {
       if ((e.key === 'e' || e.key === 'E') && !isDead) {
-        if (showStonePrompt && preciousStone) {
-          socketService.emit('collect_stone');
+        if (showStonePrompt && closestStone) {
+          socketService.emit('collect_stone', { stoneId: closestStone.id });
           setShowStonePrompt(false);
-        } else if (showOracleDeliveryPrompt && hasStoneInInventory) {
-          socketService.emit('deliver_stone');
         }
       }
     };
     window.addEventListener('keydown', handleInteraction);
     return () => window.removeEventListener('keydown', handleInteraction);
-  }, [isDead, showStonePrompt, showOracleDeliveryPrompt, hasStoneInInventory, preciousStone]);
+  }, [isDead, showStonePrompt, closestStone]);
 
   useEffect(() => {
     const handleMobileInteract = (e) => {
       if (e.detail?.action === 'interact' && !isDead) {
-        if (showStonePrompt && preciousStone) {
-          socketService.emit('collect_stone');
+        if (showStonePrompt && closestStone) {
+          socketService.emit('collect_stone', { stoneId: closestStone.id });
           setShowStonePrompt(false);
-        } else if (showOracleDeliveryPrompt && hasStoneInInventory) {
-          socketService.emit('deliver_stone');
         }
       }
     };
     window.addEventListener('mobileInput', handleMobileInteract);
     return () => window.removeEventListener('mobileInput', handleMobileInteract);
-  }, [isDead, showStonePrompt, showOracleDeliveryPrompt, hasStoneInInventory, preciousStone]);
+  }, [isDead, showStonePrompt, closestStone]);
 
   const prevEnemies = usePrevious(enemies);
 
@@ -359,25 +353,31 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
     if (localPlayerRef.current.position.z > mapBoundary) localPlayerRef.current.position.z = mapBoundary;
     if (localPlayerRef.current.position.z < -mapBoundary) localPlayerRef.current.position.z = -mapBoundary;
 
-    if (preciousStone && !hasStoneInInventory) {
-      const stoneDx = preciousStone.x - playerPos.x;
-      const stoneDz = preciousStone.z - playerPos.z;
-      const stoneDistance = Math.sqrt(stoneDx * stoneDx + stoneDz * stoneDz);
-      const stoneInteractionRadius = 2.0;
-      setShowStonePrompt(stoneDistance < stoneInteractionRadius);
-    } else {
-      setShowStonePrompt(false);
-    }
+    if (preciousStones.length > 0) {
+        let minDistance = Infinity;
+        let currentClosestStone = null;
 
-    if (hasStoneInInventory) {
-      const oraclePosition = [30, 0, 30];
-      const oracleDx = oraclePosition[0] - playerPos.x;
-      const oracleDz = oraclePosition[2] - playerPos.z;
-      const oracleDistance = Math.sqrt(oracleDx * oracleDx + oracleDz * oracleDz);
-      const oracleInteractionRadius = 3.0;
-      setShowOracleDeliveryPrompt(oracleDistance < oracleInteractionRadius);
+        preciousStones.forEach(stone => {
+            const stoneDx = stone.x - playerPos.x;
+            const stoneDz = stone.z - playerPos.z;
+            const stoneDistance = Math.sqrt(stoneDx * stoneDx + stoneDz * stoneDz);
+            if (stoneDistance < minDistance) {
+                minDistance = stoneDistance;
+                currentClosestStone = stone;
+            }
+        });
+
+        const stoneInteractionRadius = 2.0;
+        if (minDistance < stoneInteractionRadius) {
+            setShowStonePrompt(true);
+            setClosestStone(currentClosestStone);
+        } else {
+            setShowStonePrompt(false);
+            setClosestStone(null);
+        }
     } else {
-      setShowOracleDeliveryPrompt(false);
+        setShowStonePrompt(false);
+        setClosestStone(null);
     }
 
     const activeInstanceIds = new Set(activeAbilities.map(a => a.instanceId));
@@ -389,7 +389,7 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
 
     if (onAbilityStateChange) onAbilityStateChange(localPlayerRef.current?.abilityState);
     if (onInvulnerabilityStateChange) onInvulnerabilityStateChange(localPlayerRef.current?.invulnerability);
-    if (onStonePromptsChange) onStonePromptsChange({ showStonePrompt, showOracleDeliveryPrompt, hasStoneInInventory });
+    if (onStonePromptsChange) onStonePromptsChange({ showStonePrompt, showOracleDeliveryPrompt: false, hasStoneInInventory: false });
   });
 
   const playerPositions = players.map(p => p.position).filter(Boolean);
@@ -435,13 +435,13 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
       {/* Oráculo */}
       <Oracle
         playerPosition={localPlayerRef.current?.position ? [localPlayerRef.current.position.x, localPlayerRef.current.position.y, localPlayerRef.current.position.z] : [0, 0, 0]}
-        preciousStoneActive={preciousStone !== null && !hasStoneInInventory}
+        preciousStoneActive={preciousStones.length > 0}
       />
 
-      {/* Pedra Preciosa */}
-      {preciousStone && !hasStoneInInventory && (
-        <PreciousStone position={[preciousStone.x, preciousStone.y, preciousStone.z]} />
-      )}
+      {/* Pedras Preciosas */}
+      {preciousStones.map(stone => (
+        <PreciousStone key={stone.id} position={[stone.x, stone.y, stone.z]} />
+      ))}
 
       {/* NPCs Amigáveis */}
       {friendlyNpcData.map(npc => (
@@ -501,11 +501,23 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
           if (enemy.type === 'ghost') {
             return <Ghost key={enemy.id} id={enemy.id} position={enemy.position} health={enemy.health} maxHealth={enemy.maxHealth} />;
           }
+          if (enemy.type === 'slime') {
+            return <Slime key={enemy.id} id={enemy.id} position={enemy.position} health={enemy.health} maxHealth={enemy.maxHealth} />;
+          }
+          if (enemy.type === 'coconaro') {
+            return <Coconaro key={enemy.id} id={enemy.id} position={enemy.position} health={enemy.health} maxHealth={enemy.maxHealth} />;
+          }
         } else {
           return <DeathAnimation key={`${enemy.id}-death`} position={enemy.position} type={enemy.type} onComplete={() => {}} />;
         }
         return null;
       })}
+
+      {/* Cocos Colecionáveis */}
+      {coconuts.map(coco => (
+        <Coco key={coco.id} id={coco.id} position={[coco.x, coco.y, coco.z]} />
+      ))}
+
       {dyingEnemies.map((enemy) => (
         <DeathAnimation
           key={`death-${enemy.id}`}

@@ -19,7 +19,8 @@ function Oracle({ playerPosition = [0, 0, 0], preciousStoneActive = false }) {
   const [speechText, setSpeechText] = useState('');
   const interactionDistance = 3; // Distância para interagir
 
-  const { activeMission, missionReadyToComplete, acceptMission, completeMission } = useMissionStore();
+  const { activeMission, missionReadyToComplete } = useMissionStore();
+  const setShowMissionChoice = useGameStore((state) => state.setShowMissionChoice);
 
   useFrame((state) => {
     // Animar anel de interação
@@ -45,26 +46,25 @@ function Oracle({ playerPosition = [0, 0, 0], preciousStoneActive = false }) {
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [isPlayerNearby, activeMission, missionReadyToComplete]);
+  }, [isPlayerNearby]);
+
+  // Novo listener para o evento de escolha de missão
+  useEffect(() => {
+    const handleShowChoice = (data) => {
+      console.log('CLIENT: Recebido evento show_mission_choice', data);
+      setShowMissionChoice(true, data);
+    };
+
+    socketService.on('show_mission_choice', handleShowChoice);
+    return () => socketService.off('show_mission_choice', handleShowChoice);
+  }, [setShowMissionChoice]);
 
   const handleInteraction = () => {
-    if (!activeMission) {
-      // Aceitar nova missão - enviar para o servidor
-      setSpeechText('Eliminem os mortos-vivos que ameaçam nossa terra!');
-      socketService.emit('mission_accept', { missionId: 'kill_zombies_1' });
-
-      setTimeout(() => setSpeechText(''), 4000);
-    } else if (missionReadyToComplete) {
-      // Completar missão - enviar para o servidor
-      setSpeechText('Excelente trabalho! Aqui está sua recompensa.');
-      socketService.emit('mission_complete');
-
-      setTimeout(() => setSpeechText(''), 4000);
-    } else if (activeMission.target === 'precious_stone' && preciousStoneActive) {
-      // Missão da pedra ativa mas ainda não foi coletada
-      setSpeechText('Procurem a pedra preciosa que apareceu no mapa!');
-      setTimeout(() => setSpeechText(''), 4000);
-    }
+    // A lógica agora é centralizada no servidor
+    socketService.emit('interact_with_oracle');
+    // Opcional: mostrar um feedback visual imediato
+    setSpeechText('O Oráculo pondera sobre seu destino...');
+    setTimeout(() => setSpeechText(''), 2000);
   };
 
   // Atualizar balão de fala quando jogador se aproxima

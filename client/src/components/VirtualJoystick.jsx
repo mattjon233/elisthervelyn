@@ -4,7 +4,7 @@ import './VirtualJoystick.css';
 /**
  * Joystick Virtual para controle touch em dispositivos móveis
  */
-function VirtualJoystick({ onMove, onAttack, onSpecial, onInteract, onUsePotion, onInvulnerability }) {
+function VirtualJoystick({ onMove, onAttack, onSpecial, onInteract, onUsePotion, onInvulnerability, hasInvulnerability = false }) {
   const joystickRef = useRef(null);
   const stickRef = useRef(null);
   const [active, setActive] = useState(false);
@@ -179,22 +179,24 @@ function VirtualJoystick({ onMove, onAttack, onSpecial, onInteract, onUsePotion,
           💊
         </button>
 
-        {/* Botão de Invulnerabilidade (T) */}
-        <button
-          className="action-btn invuln-btn"
-          onTouchStart={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('🛡️ Invulnerabilidade touch');
-            if (onInvulnerability) onInvulnerability();
-          }}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-        >
-          🛡️
-        </button>
+        {/* Botão de Invulnerabilidade (T) - só aparece se desbloqueado */}
+        {hasInvulnerability && (
+          <button
+            className="action-btn invuln-btn"
+            onTouchStart={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('🛡️ Invulnerabilidade touch');
+              if (onInvulnerability) onInvulnerability();
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
+            🛡️
+          </button>
+        )}
       </div>
     </div>
   );

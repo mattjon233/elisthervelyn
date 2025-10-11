@@ -8,8 +8,12 @@ import GameOverScreen from './GameOverScreen';
 import DamageOverlay from './DamageOverlay';
 import HealEffect from './HealEffect';
 import IntroCinematic from './IntroCinematic';
+import MissionChoiceUI from './MissionChoiceUI';
+import FinalCutscene from './FinalCutscene';
+import Credits from './Credits';
 import { useGameStore } from '../store/gameStore';
 import { usePrevious } from '../game/hooks/usePrevious';
+import socketService from '../services/socket';
 import './Game.css';
 
 function Game({ roomData }) {
@@ -18,9 +22,12 @@ function Game({ roomData }) {
   const [invulnerabilityState, setInvulnerabilityState] = useState(null);
   const [stonePrompts, setStonePrompts] = useState({ showStonePrompt: false, showOracleDeliveryPrompt: false, hasStoneInInventory: false });
   const [healAmount, setHealAmount] = useState(5);
+  const [showFinalCutscene, setShowFinalCutscene] = useState(false);
+  const [showCredits, setShowCredits] = useState(false);
   const { 
     players, playerId, isDead, lastDamageTime, lastHealTime, 
-    isCinematicOpen, setIsCinematicOpen, setDead 
+    isCinematicOpen, setIsCinematicOpen, setDead,
+    showMissionChoice 
   } = useGameStore();
 
   const localPlayer = players.find(p => p.id === playerId);
@@ -56,12 +63,39 @@ function Game({ roomData }) {
     setIsCinematicOpen(false);
   }, [setIsCinematicOpen]);
 
+  // Listener para o final do jogo
+  useEffect(() => {
+    const handleFinalCutscene = () => {
+      setShowFinalCutscene(true);
+    };
+    const handleShowCredits = () => {
+      setShowFinalCutscene(false); // Garante que a cutscene saia
+      setShowCredits(true);
+    };
+
+    socketService.on('final_cutscene_start', handleFinalCutscene);
+    socketService.on('show_credits', handleShowCredits);
+
+    return () => {
+      socketService.off('final_cutscene_start', handleFinalCutscene);
+      socketService.off('show_credits', handleShowCredits);
+    };
+  }, []);
+
   return (
     <div className="game-container">
       {/* Cinematográfica de Introdução */}
       {isCinematicOpen && (
         <IntroCinematic onComplete={handleCinematicComplete} />
       )}
+
+      {/* Cutscene Final */}
+      {showFinalCutscene && (
+        <FinalCutscene onComplete={() => setShowFinalCutscene(false)} />
+      )}
+
+      {/* Créditos */}
+      {showCredits && <Credits />}
 
       {/* Cena 3D */}
       <Canvas
@@ -105,6 +139,9 @@ function Game({ roomData }) {
           killCount={killCount}
         />
       )}
+
+      {/* UI de Escolha de Missão */}
+      {showMissionChoice && <MissionChoiceUI />}
     </div>
   );
 }

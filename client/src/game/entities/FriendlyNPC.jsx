@@ -70,13 +70,30 @@ function FriendlyNPC({ npcData, playerPosition }) {
     </>
   );
 
+  const BabaYagaModel = () => (
+    <>
+        {/* Corpo cabeludo e diferentão */}
+        <mesh castShadow position={[0, 0.5, 0]}><boxGeometry args={[0.6, 1, 0.4]} /><meshStandardMaterial color="#8B4513" /></mesh>
+        {/* Cabeça */}
+        <mesh castShadow position={[0, 1.2, 0]}><sphereGeometry args={[0.25, 16, 16]} /><meshStandardMaterial color="#F5D5C3" /></mesh>
+        {/* Cabelo cabeludo - múltiplas esferas para dar efeito de cabelo bagunçado */}
+        <mesh castShadow position={[0, 1.35, 0]}><sphereGeometry args={[0.28, 8, 8]} /><meshStandardMaterial color="#2C1810" roughness={1} /></mesh>
+        <mesh castShadow position={[-0.15, 1.4, 0]}><sphereGeometry args={[0.15, 8, 8]} /><meshStandardMaterial color="#2C1810" roughness={1} /></mesh>
+        <mesh castShadow position={[0.15, 1.4, 0]}><sphereGeometry args={[0.15, 8, 8]} /><meshStandardMaterial color="#2C1810" roughness={1} /></mesh>
+        <mesh castShadow position={[0, 1.45, 0.15]}><sphereGeometry args={[0.12, 8, 8]} /><meshStandardMaterial color="#2C1810" roughness={1} /></mesh>
+        {/* Barba pequena */}
+        <mesh castShadow position={[0, 1.05, 0.2]}><coneGeometry args={[0.1, 0.25, 6]} /><meshStandardMaterial color="#4A3020" roughness={1} /></mesh>
+    </>
+  );
+
   return (
     <group ref={meshRef} position={[position.x, 0, position.z]}>
         {model === 'child' && <ChildModel />}
         {model === 'villager_male' && <VillagerModel color="#2c3e50" />}
         {model === 'villager_female' && <VillagerModel color="#8e44ad" />}
+        {model === 'baba_yaga' && <BabaYagaModel />}
 
-        {speechText && <SpeechBubble text={speechText} position={[0, model === 'child' ? 1.2 : 1.5, 0]} />}
+        {speechText && <SpeechBubble text={speechText} position={[0, model === 'child' ? 1.2 : (model === 'baba_yaga' ? 1.8 : 1.5), 0]} />}
     </group>
   );
 }

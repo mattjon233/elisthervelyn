@@ -74,7 +74,13 @@ export class GameService {
       { id: 'g2', type: 'ghost', position: [12, 1, -18], health: 75, maxHealth: 75 },
       { id: 'g3', type: 'ghost', position: [15, 1, 12], health: 75, maxHealth: 75 },
       { id: 'g4', type: 'ghost', position: [-12, 1, 15], health: 75, maxHealth: 75 },
-      { id: 'g5', type: 'ghost', position: [20, 1, -8], health: 75, maxHealth: 75 }
+      { id: 'g5', type: 'ghost', position: [20, 1, -8], health: 75, maxHealth: 75 },
+
+      // Gosmas (Slimes) - lentos mas perigosos (40 de dano)
+      { id: 's1', type: 'slime', position: [-20, 0.5, -20], health: 60, maxHealth: 60 },
+      { id: 's2', type: 'slime', position: [20, 0.5, -20], health: 60, maxHealth: 60 },
+      { id: 's3', type: 'slime', position: [-20, 0.5, 20], health: 60, maxHealth: 60 },
+      { id: 's4', type: 'slime', position: [20, 0.5, 20], health: 60, maxHealth: 60 }
     ];
   }
 
@@ -246,8 +252,53 @@ export class GameService {
           });
         }
 
-      } else { // Lógica para Zumbis e Fantasmas
-        const speed = enemy.type === 'zombie' ? 1.2 : 2.0;
+      } else if (enemy.type === 'coconaro') {
+        const coconaroStats = this.getBossData();
+        const speed = coconaroStats.stats.speed;
+        const attackRange = 2.5;
+
+        if (minDistance > attackRange) {
+          // Perseguir sem limite de distância
+          const targetPos = nearestPlayer.position;
+          const enemyPos = { x: enemy.position[0], y: enemy.position[1], z: enemy.position[2] };
+
+          const dx = targetPos.x - enemyPos.x;
+          const dz = targetPos.z - enemyPos.z;
+          const direction = { x: dx / minDistance, z: dz / minDistance };
+
+          enemy.position[0] += direction.x * speed * delta;
+          enemy.position[2] += direction.z * speed * delta;
+        } else {
+          // Atacar quando no alcance
+          if (nearestPlayer.health <= 0) return;
+          const now = Date.now();
+          if (nearestPlayer.invulnerableUntil && now < nearestPlayer.invulnerableUntil) return;
+
+          if (!enemy.lastAttackTime || now - enemy.lastAttackTime > 1000) { // Cooldown de 1s
+            enemy.lastAttackTime = now;
+            const damage = coconaroStats.stats.damage;
+            nearestPlayer.health = Math.max(0, nearestPlayer.health - damage);
+            console.log(`SERVER: Boss ${enemy.id} causou ${damage} de dano em ${nearestPlayer.id}. Vida restante: ${nearestPlayer.health}`);
+          }
+        }
+
+      } else { // Lógica para Zumbis, Fantasmas e Slimes
+        let speed, damage;
+
+        if (enemy.type === 'zombie') {
+          speed = 1.2;
+          damage = 10;
+        } else if (enemy.type === 'ghost') {
+          speed = 2.0;
+          damage = 15;
+        } else if (enemy.type === 'slime') {
+          speed = 0.8; // Slimes são lentos
+          damage = 40; // Mas dão muito dano!
+        } else {
+          speed = 1.0;
+          damage = 10;
+        }
+
         const detectionRange = 12;
         const attackRange = 1.5;
 
@@ -274,9 +325,8 @@ export class GameService {
 
           if (!enemy.lastAttackTime || now - enemy.lastAttackTime > 1000) { // Cooldown de 1s
             enemy.lastAttackTime = now;
-            const damage = enemy.type === 'zombie' ? 10 : 15;
             nearestPlayer.health = Math.max(0, nearestPlayer.health - damage);
-            console.log(`SERVER: Inimigo ${enemy.id} causou ${damage} de dano em ${nearestPlayer.id}. Vida restante: ${nearestPlayer.health}`);
+            console.log(`SERVER: Inimigo ${enemy.id} (${enemy.type}) causou ${damage} de dano em ${nearestPlayer.id}. Vida restante: ${nearestPlayer.health}`);
           }
         }
       }

@@ -13,7 +13,13 @@ function MissionUI() {
 
   const toggleMinimize = () => setIsMinimized(!isMinimized);
 
-  const progressPercent = (missionProgress / activeMission.requiredCount) * 100;
+  // Lógica customizada para a missão do Coconaro
+  const isCoconaroMission = activeMission.id === 'coconaro_boss_fight';
+  const coconaroProgress = isCoconaroMission ? (missionProgress?.cocos || 0) : missionProgress;
+  const coconaroRequired = isCoconaroMission ? activeMission.objetivos.alvos.cocos : activeMission.requiredCount;
+  const coconaroText = isCoconaroMission ? activeMission.objetivos.texto_ui : 'Progresso';
+
+  const progressPercent = (coconaroProgress / coconaroRequired) * 100;
 
   return (
     <div className={`mission-ui ${isMinimized ? 'minimized' : ''}`}>
@@ -31,9 +37,9 @@ function MissionUI() {
 
           <div className="mission-progress">
             <div className="progress-text">
-              <span>Progresso</span>
-              <span className={missionReadyToComplete ? 'complete' : ''}>
-                {missionProgress}/{activeMission.requiredCount}
+              <span>{coconaroText}</span>
+              <span className={coconaroProgress >= coconaroRequired ? 'complete' : ''}>
+                {coconaroProgress}/{coconaroRequired}
               </span>
             </div>
             <div className="progress-bar">
@@ -52,8 +58,8 @@ function MissionUI() {
 
           <div className="mission-reward">
             <span className="reward-label">Recompensa:</span>
-            <span className="reward-item">💰 100 Ouro</span>
-            <span className="reward-item">⭐ 50 XP</span>
+            <span className="reward-item">💰 {activeMission.rewards?.gold || 50} Ouro</span>
+            <span className="reward-item">⭐ {activeMission.rewards?.xp || 100} XP</span>
           </div>
         </div>
       )}

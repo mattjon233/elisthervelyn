@@ -5,7 +5,7 @@
     "esther": {
       "nome": "Esther",
       "classe": "Arqueira",
-      "cor_principal": "#FFB6D9",
+      "cor_principal": "#87CEEB",
       "stats": {
         "vida_maxima": 80,
         "velocidade": 5.0,
@@ -24,7 +24,7 @@
     "elissa": {
       "nome": "Elissa",
       "classe": "Guerreira",
-      "cor_principal": "#D4A5D4",
+      "cor_principal": "#C71585",
       "stats": {
         "vida_maxima": 150,
         "velocidade": 4.0,
@@ -43,7 +43,7 @@
     "evelyn": {
       "nome": "Evelyn",
       "classe": "Maga",
-      "cor_principal": "#A8D8EA",
+      "cor_principal": "#FFB6C1",
       "stats": {
         "vida_maxima": 50,
         "velocidade": 4.5,
@@ -133,12 +133,28 @@
         "comportamento_especial": "atravessa_obstaculos"
       },
       "modelo_placeholder": "sphere_white"
+    },
+    "slime": {
+      "nome": "Gosma",
+      "cor_principal": "#FF69B4",
+      "ia": {
+        "tipo": "perseguir_jogadora_mais_proxima",
+        "alcance_deteccao": 10,
+        "alcance_ataque": 1.5,
+        "velocidade_reduzida": 0.6
+      },
+      "modelo_placeholder": "sphere_pink_green"
     }
   },
 
   "boss": {
     "coconaro": {
       "nome": "COCONARO",
+      "stats": {
+        "hp": 1000,
+        "damage": 20,
+        "speed": 4.5
+      },
       "cor_principal": "#8B4513",
       "tamanho": 3.0,
       "modelo_placeholder": "sphere_brown_large",

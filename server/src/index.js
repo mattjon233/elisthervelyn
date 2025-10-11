@@ -51,6 +51,9 @@ io.on('connection', (socket) => {
   socket.on('request_respawn', () => gameController.handlePlayerRespawn(socket));
 
   // Missões colaborativas
+  socket.on('interact_with_oracle', () => gameController.handleInteractWithOracle(socket));
+  socket.on('start_mission', (data) => gameController.handleStartMission(socket, data));
+  socket.on('collect_coconut', (data) => gameController.handleCollectCoconut(socket, data));
   socket.on('mission_accept', (data) => gameController.handleMissionAccept(socket, data));
   socket.on('mission_complete', () => gameController.handleMissionComplete(socket));
 
@@ -59,8 +62,7 @@ io.on('connection', (socket) => {
   socket.on('use_potion', () => gameController.handleUsePotion(socket));
 
   // Pedra Preciosa
-  socket.on('collect_stone', () => gameController.handleCollectStone(socket));
-  socket.on('deliver_stone', () => gameController.handleDeliverStone(socket));
+  socket.on('collect_stone', (data) => gameController.handleCollectStone(socket, data));
 
   // Skills
   socket.on('skill_unlocked', (data) => gameController.handleSkillUnlocked(socket, data));
@@ -68,6 +70,7 @@ io.on('connection', (socket) => {
 
   // DEBUG: Matar todos os monstros (tecla B)
   socket.on('debug_kill_all', () => gameController.handleDebugKillAll(socket));
+  socket.on('debug_complete_mission', () => gameController.handleDebugCompleteMission(socket));
 
   // Desconexão
   socket.on('disconnect', () => gameController.handleDisconnect(socket));

@@ -61,19 +61,17 @@ export class GameController {
       // Missões colaborativas
       activeMission: null,
       missionProgress: 0,
-      teamGold: 5000,
+      teamGold: 0,
       // NPCs passivos (não atacam nem tomam dano)
       npcs: [],
-      // Missão especial da pedra preciosa
-      preciousStone: {
-        spawned: false,
-        collected: false,
-        position: null
-      },
+      // Missão especial das pedras preciosas
+      preciousStones: [], // Array para as 10 pedras
       // Estado do Rocket (cooldown sincronizado)
       rocketState: {
         lastHealTime: 0
-      }
+      },
+      gemMissionCompleted: false, // Flag para controlar a aparição da missão do boss
+      coconuts: [] // Array de cocos para a missão do Coconaro
     };
 
     this.rooms.set(roomId, room);
@@ -334,6 +332,82 @@ export class GameController {
         teamGold: room.teamGold
       });
     }
+
+    // Condição de vitória do Coconaro
+    if (enemy.type === 'coconaro') {
+      if (room.missionProgress.cocos >= 20) {
+        console.log('SERVER: COCONARO DERROTADO! Dando item Coração do Coconaro.');
+        const killer = room.players.find(p => p.id === killerSocket.id);
+        if (killer) {
+          killer.hasCoconaroHeart = true;
+        }
+        // Remover todos os outros zumbis
+        room.enemies = room.enemies.filter(e => e.type !== 'zombie' && e.id !== 'coconaro_boss');
+        this.io.to(roomId).emit('dialogue_triggered', { speaker: 'Oráculo', text: 'O tirano caiu! Levem o coração dele até mim!' });
+      } else {
+        // Se o HP acabou mas os cocos não, ele não morre de verdade
+        console.log('SERVER: HP do Coconaro chegou a 0, mas os cocos não foram coletados. Restaurando 1 HP.');
+        enemy.health = 1;
+      }
+    }
+  }
+
+  /**
+   * Coletar coco
+   */
+  handleCollectCoconut(socket, { coconutId }) {
+    const roomId = this.playerRooms.get(socket.id);
+    const room = this.rooms.get(roomId);
+    if (!room || !room.activeMission || room.activeMission.id !== 'coconaro_boss_fight') return;
+
+    const coconutIndex = room.coconuts.findIndex(c => c.id === coconutId);
+    if (coconutIndex === -1) return; // Coco já foi coletado
+
+    // Remove o coco
+    room.coconuts.splice(coconutIndex, 1);
+    room.missionProgress.cocos = (room.missionProgress.cocos || 0) + 1;
+
+    // Aplica dano no Coconaro
+    const boss = room.enemies.find(e => e.id === 'coconaro_boss');
+    if (boss) {
+      const wasAlive = boss.health > 0;
+      boss.health = Math.max(0, boss.health - 25);
+      console.log(`SERVER: Coco coletado! Dano de 25 no Coconaro. HP restante: ${boss.health}`);
+      const isDead = boss.health <= 0;
+      if (wasAlive && isDead) {
+        this.handleEnemyDeath(roomId, boss, socket);
+      }
+    }
+
+    // Notifica todos sobre a coleta
+    this.io.to(roomId).emit('coconut_collected', { coconutId });
+    this.io.to(roomId).emit('mission_updated', { 
+      activeMission: room.activeMission, 
+      missionProgress: room.missionProgress,
+      teamGold: room.teamGold
+    });
+  }
+
+  /**
+   * Entregar o Coração do Coconaro
+   */
+  handleDeliverHeart(socket) {
+    const roomId = this.playerRooms.get(socket.id);
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player || !player.hasCoconaroHeart) return;
+
+    player.hasCoconaroHeart = false; // Consome o item
+
+    // Dispara a cutscene final e os créditos
+    this.io.to(roomId).emit('final_cutscene_start', { dialogueKey: 'coconaro_derrotado' });
+    setTimeout(() => {
+      this.io.to(roomId).emit('show_credits');
+    }, 10000); // Mostra créditos após 10s de cutscene
+
+    console.log(`SERVER: ${player.id} entregou o Coração do Coconaro. Fim de jogo.`);
   }
 
   /**
@@ -467,6 +541,47 @@ export class GameController {
   }
 
   /**
+   * Interação com o Oráculo - Ponto central para missões
+   */
+  async handleInteractWithOracle(socket) {
+    const roomId = this.playerRooms.get(socket.id);
+    const room = this.rooms.get(roomId);
+    if (!room || !room.gameStarted) return;
+
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player) return;
+
+    // Lógica de Pós-Boss
+    if (player.hasCoconaroHeart) {
+      return this.handleDeliverHeart(socket);
+    }
+
+    // Se tem missão ativa e está completa, completar
+    if (room.activeMission && room.missionProgress >= room.activeMission.requiredCount) {
+      return this.handleMissionComplete(socket);
+    }
+
+    // Lógica de Escolha de Missão (Pós-Gema)
+    if (room.gemMissionCompleted && !room.activeMission) {
+      const briefing = await this.dialogueService.getDialogue('coconaro_briefing');
+      socket.emit('show_mission_choice', {
+        title: 'O Próximo Passo',
+        dialogue: briefing.oraculo,
+        choices: [
+          { id: 'zombie_repeat', text: 'Repetir Missão: Matar Zumbis' },
+          { id: 'coconaro_boss_fight', text: 'Nova Missão: Enfrentar Coconaro' },
+        ]
+      });
+      return;
+    }
+
+    // Lógica Padrão: Aceitar próxima missão sequencial
+    if (!room.activeMission) {
+      this.handleMissionAccept(socket, { missionId: 'kill_zombies_1' });
+    }
+  }
+
+  /**
    * Aceitar missão (colaborativa)
    */
   handleMissionAccept(socket, { missionId }) {
@@ -495,7 +610,56 @@ export class GameController {
     });
   }
 
-  // handleMissionProgress removido - agora o progresso é automático em handleEnemyDeath
+  /**
+   * Inicia uma missão com base na escolha da jogadora
+   */
+  async handleStartMission(socket, { missionId }) {
+    const roomId = this.playerRooms.get(socket.id);
+    const room = this.rooms.get(roomId);
+    if (!room || !room.gameStarted) return;
+
+    if (missionId === 'coconaro_boss_fight') {
+      // Lógica para iniciar a missão do Coconaro
+      console.log(`SERVER: Iniciando missão do Coconaro para a sala ${roomId}`);
+
+      const missionData = await this.missionService.getMission('mission_coconaro_boss');
+      room.activeMission = missionData;
+      room.missionProgress = { cocos: 0, coconaro: 0 };
+
+      // Spawnar Coconaro
+      const bossData = this.gameService.getBossData();
+      const coconaro = {
+        id: 'coconaro_boss',
+        type: 'coconaro',
+        position: [-30, 0.5, 37], // Atrás da mansão
+        health: bossData.stats.hp,
+        maxHealth: bossData.stats.hp,
+      };
+      room.enemies.push(coconaro);
+
+      // Spawnar Cocos
+      room.coconuts = this.generateCoconutPositions(20);
+      console.log(`SERVER: Gerados ${room.coconuts.length} cocos para a missão do Coconaro`);
+      console.log(`SERVER: Primeiros 3 cocos:`, room.coconuts.slice(0, 3));
+
+      this.io.to(roomId).emit('mission_updated', {
+        activeMission: room.activeMission,
+        missionProgress: room.missionProgress,
+        teamGold: room.teamGold
+      });
+
+      this.io.to(roomId).emit('coconaro_mission_started', {
+        boss: coconaro,
+        coconuts: room.coconuts
+      });
+
+      console.log(`SERVER: Evento 'coconaro_mission_started' enviado para sala ${roomId}`);
+
+    } else if (missionId === 'zombie_repeat') {
+      // Lógica para repetir a missão dos zumbis
+      this.handleMissionAccept(socket, { missionId: 'kill_zombies_1' });
+    }
+  }
 
   /**
    * Completar missão e coletar recompensa
@@ -506,47 +670,68 @@ export class GameController {
     if (!room || !room.gameStarted || !room.activeMission) return;
 
     // Verificar se completou
-    if (room.missionProgress < room.activeMission.requiredCount) return;
+    if (room.missionProgress < room.activeMission.requiredCount) {
+      console.log(`SERVER: Missão não pode ser completada ainda. Progresso: ${room.missionProgress}/${room.activeMission.requiredCount}`);
+      return;
+    }
 
-    // Adicionar recompensa
-    room.teamGold += 100;
+    console.log(`SERVER: Completando missão ${room.activeMission.id} para sala ${roomId}`);
 
-    console.log(`SERVER: Sala ${roomId} completou missão! +100 ouro (Total: ${room.teamGold})`);
+    // Determinar recompensas baseado na missão
+    let goldReward = 0;
+    let xpReward = 0;
 
-    // Dar XP para TODOS os jogadores na sala (50 XP por completar missão)
-    const playersInRoom = room.players.length;
-    console.log(`SERVER: Dando 50 XP para ${playersInRoom} jogadores na sala ${roomId}`);
-    this.io.to(roomId).emit('xp_gained', { amount: 50, reason: 'mission_complete' });
+    if (room.activeMission.id === 'kill_zombies_1') {
+        goldReward = 50;
+        xpReward = 100;
+    } else if (room.activeMission.id === 'find_precious_stones') {
+        goldReward = 150;
+        xpReward = 300;
+        room.gemMissionCompleted = true; // Marca que a missão da gema foi feita!
+    }
 
-    // Se foi a missão de zumbis (target: 'zombie'), spawnar pedra preciosa
-    if (room.activeMission.target === 'zombie' && !room.preciousStone.spawned) {
-      room.preciousStone.spawned = true;
-      // Posição aleatória no mapa (evitando mansão e centro)
-      const randomX = (Math.random() - 0.5) * 80; // -40 a 40
-      const randomZ = (Math.random() - 0.5) * 80;
-      room.preciousStone.position = { x: randomX, y: 0.5, z: randomZ };
+    // Adicionar recompensa de ouro
+    if (goldReward > 0) {
+        room.teamGold += goldReward;
+        console.log(`SERVER: Sala ${roomId} completou missão! +${goldReward} ouro (Total: ${room.teamGold})`);
+    }
+    
+    // Dar XP para TODOS os jogadores na sala
+    if (xpReward > 0) {
+        console.log(`SERVER: Dando ${xpReward} XP para ${room.players.length} jogadores na sala ${roomId}`);
+        this.io.to(roomId).emit('xp_gained', { amount: xpReward, reason: 'mission_complete' });
+    }
 
-      console.log(`SERVER: Pedra preciosa spawnou em [${randomX.toFixed(2)}, ${randomZ.toFixed(2)}]`);
+    // Diálogo do Oráculo sobre a recompensa
+    this.io.to(roomId).emit('dialogue_triggered', {
+      speaker: 'Oráculo',
+      text: `Excelente trabalho, heroínas! Aqui está sua recompensa!`
+    });
 
-      // Notificar todos sobre a pedra
-      this.io.to(roomId).emit('precious_stone_spawned', {
-        position: room.preciousStone.position
+    // Se foi a missão de zumbis, spawnar as 10 pedras preciosas
+    if (room.activeMission.id === 'kill_zombies_1' && room.preciousStones.length === 0) {
+      room.preciousStones = this.generateStonePositions(10);
+      console.log(`SERVER: 10 Pedras preciosas spawnaram.`);
+
+      // Notificar todos sobre as pedras
+      this.io.to(roomId).emit('precious_stones_spawned', {
+        stones: room.preciousStones
       });
 
       // Diálogo do Oráculo sobre a pedra
       this.io.to(roomId).emit('dialogue_triggered', {
         speaker: 'Oráculo',
-        text: 'Bem feito, heroínas! Mas espere... sinto uma energia mágica próxima. Uma pedra preciosa apareceu em algum lugar do mapa! Ela é pequena e brilhante. Tragam-na para mim e recompensarei vocês generosamente!'
+        text: 'Sinto uma grande energia se espalhando! 10 pedras preciosas apareceram pelo mapa. Tragam-nas para mim!'
       });
 
       // Criar missão da pedra preciosa
       room.activeMission = {
-        id: 'find_precious_stone',
-        title: 'Encontrar a Pedra Preciosa',
-        description: 'Uma pedra mágica apareceu no mapa. Encontrem-na e levem ao Oráculo.',
+        id: 'find_precious_stones',
+        title: 'Encontrar as Pedras Preciosas',
+        description: '10 pedras mágicas apareceram no mapa. Encontrem todas.',
         type: 'collect',
         target: 'precious_stone',
-        requiredCount: 1
+        requiredCount: 10
       };
       room.missionProgress = 0;
 
@@ -557,7 +742,7 @@ export class GameController {
         teamGold: room.teamGold
       });
     } else {
-      // Limpar missão (caso não seja zumbi)
+      // Limpar missão (caso não seja a de zumbis ou já tenha sido feita)
       room.activeMission = null;
       room.missionProgress = 0;
 
@@ -686,96 +871,51 @@ export class GameController {
   /**
    * Coletar pedra preciosa
    */
-  handleCollectStone(socket) {
+  handleCollectStone(socket, { stoneId }) {
     const roomId = this.playerRooms.get(socket.id);
     const room = this.rooms.get(roomId);
     if (!room || !room.gameStarted) return;
 
-    // Verificar se a pedra existe e não foi coletada
-    if (!room.preciousStone.spawned || room.preciousStone.collected) {
-      socket.emit('error', { message: 'Pedra não disponível!' });
+    const stoneIndex = room.preciousStones.findIndex(s => s.id === stoneId);
+    if (stoneIndex === -1) {
+      socket.emit('error', { message: 'Pedra não disponível ou já coletada!' });
       return;
     }
 
     const player = room.players.find(p => p.id === socket.id);
     if (!player) return;
 
-    // Marcar como coletada
-    room.preciousStone.collected = true;
-    player.hasPreciousStone = true;
+    // Remove a pedra do array
+    room.preciousStones.splice(stoneIndex, 1);
 
-    console.log(`SERVER: ${player.id} coletou a pedra preciosa!`);
+    console.log(`SERVER: ${player.id} coletou a pedra preciosa ${stoneId}!`);
 
-    // Atualizar progresso da missão (se existe missão da pedra)
+    // Atualiza o progresso da missão
     if (room.activeMission && room.activeMission.target === 'precious_stone') {
-      room.missionProgress = 1;
-      console.log(`SERVER: Progresso da missão da pedra: 1/1`);
+      room.missionProgress++;
+      console.log(`SERVER: Progresso da missão da pedra: ${room.missionProgress}/${room.activeMission.requiredCount}`);
     }
 
-    // Notificar todos
+    // Notifica todos os clientes que a pedra foi coletada
     this.io.to(roomId).emit('stone_collected', {
+      stoneId: stoneId,
       playerId: socket.id
     });
 
-    // Broadcast atualização de missão
+    // Broadcast da atualização da missão
     this.io.to(roomId).emit('mission_updated', {
       activeMission: room.activeMission,
       missionProgress: room.missionProgress,
       teamGold: room.teamGold
     });
 
-    // Diálogo
-    this.io.to(roomId).emit('dialogue_triggered', {
-      speaker: 'Oráculo',
-      text: 'Excelente! Vocês encontraram a pedra! Tragam-na até mim para receber a recompensa!'
-    });
-  }
-
-  /**
-   * Entregar pedra ao Oráculo
-   */
-  handleDeliverStone(socket) {
-    const roomId = this.playerRooms.get(socket.id);
-    const room = this.rooms.get(roomId);
-    if (!room || !room.gameStarted) return;
-
-    const player = room.players.find(p => p.id === socket.id);
-    if (!player || !player.hasPreciousStone) {
-      socket.emit('error', { message: 'Você não tem a pedra!' });
-      return;
+    // Se todas as pedras foram coletadas, envia um diálogo
+    if (room.activeMission && room.missionProgress >= room.activeMission.requiredCount) {
+      this.io.to(roomId).emit('dialogue_triggered', {
+        speaker: 'Oráculo',
+        text: 'Excelente! Vocês encontraram todas as pedras! Venham até mim para receber a recompensa!'
+      });
     }
-
-    // Dar recompensa
-    room.teamGold += 100;
-    player.hasPreciousStone = false;
-
-    console.log(`SERVER: ${player.id} entregou a pedra! +100 ouro (Total: ${room.teamGold})`);
-
-    // XP para quem entregou
-    socket.emit('xp_gained', { amount: 50, reason: 'stone_delivered' });
-
-    // Limpar missão da pedra
-    room.activeMission = null;
-    room.missionProgress = 0;
-
-    // Notificar todos
-    this.io.to(roomId).emit('stone_delivered', {
-      playerId: socket.id,
-      teamGold: room.teamGold
-    });
-
-    // Diálogo de agradecimento
-    this.io.to(roomId).emit('dialogue_triggered', {
-      speaker: 'Oráculo',
-      text: 'Maravilhoso! Esta pedra possui grande poder mágico. Aqui está sua recompensa: 100 de ouro e 50 XP! Continuem sua jornada, heroínas!'
-    });
-
-    // Atualizar estado (missão limpa)
-    this.io.to(roomId).emit('mission_updated', {
-      activeMission: room.activeMission,
-      missionProgress: room.missionProgress,
-      teamGold: room.teamGold
-    });
   }
 
   /**
@@ -860,6 +1000,33 @@ export class GameController {
   }
 
   /**
+   * DEBUG: Completar missão atual (tecla N)
+   */
+  handleDebugCompleteMission(socket) {
+    const roomId = this.playerRooms.get(socket.id);
+    const room = this.rooms.get(roomId);
+    if (!room || !room.gameStarted) return;
+
+    console.log(`🔧 DEBUG: ${socket.id} forçou completar missão!`);
+
+    if (room.activeMission) {
+      // Forçar progresso = requiredCount
+      room.missionProgress = room.activeMission.requiredCount;
+      
+      // Broadcast atualização
+      this.io.to(roomId).emit('mission_updated', {
+        activeMission: room.activeMission,
+        missionProgress: room.missionProgress,
+        teamGold: room.teamGold
+      });
+      
+      console.log(`🔧 DEBUG: Missão ${room.activeMission.id} marcada como completa`);
+    } else {
+      console.log(`🔧 DEBUG: Nenhuma missão ativa para completar`);
+    }
+  }
+
+  /**
    * Desconexão
    */
   handleDisconnect(socket) {
@@ -894,5 +1061,82 @@ export class GameController {
    */
   generateRoomId() {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
+  }
+
+  /**
+   * Gera posições aleatórias e espalhadas para os cocos
+   */
+  generateCoconutPositions(count) {
+    const positions = [];
+    const minDistance = 8; // Distância mínima entre cocos
+    const mapLimit = 45; // Limites do mapa
+
+    for (let i = 0; i < count; i++) {
+      let position;
+      let validPosition = false;
+      while (!validPosition) {
+        position = {
+          id: `coco_${i}`,
+          x: (Math.random() - 0.5) * 2 * mapLimit,
+          y: 0.5,
+          z: (Math.random() - 0.5) * 2 * mapLimit,
+        };
+
+        validPosition = true;
+        for (const existing of positions) {
+          const dx = position.x - existing.x;
+          const dz = position.z - existing.z;
+          const distance = Math.sqrt(dx * dx + dz * dz);
+          if (distance < minDistance) {
+            validPosition = false;
+            break;
+          }
+        }
+      }
+      positions.push(position);
+    }
+    return positions;
+  }
+
+  /**
+   * Gera posições aleatórias e espalhadas para as pedras preciosas
+   */
+  generateStonePositions(count) {
+    const positions = [];
+    const minDistance = 10; // Distância mínima entre pedras
+    const mapLimit = 45; // Limites do mapa
+
+    for (let i = 0; i < count; i++) {
+      let position;
+      let validPosition = false;
+      while (!validPosition) {
+        position = {
+          id: `stone_${i}`,
+          x: (Math.random() - 0.5) * 2 * mapLimit,
+          y: 0.5,
+          z: (Math.random() - 0.5) * 2 * mapLimit,
+        };
+
+        validPosition = true;
+        // Evitar spawn perto do Oráculo
+        const distToOracle = Math.sqrt(Math.pow(position.x - 35, 2) + Math.pow(position.z - 35, 2));
+        if (distToOracle < 15) {
+            validPosition = false;
+            continue;
+        }
+
+        for (const existing of positions) {
+          const dx = position.x - existing.x;
+          const dz = position.z - existing.z;
+          const distance = Math.sqrt(dx * dx + dz * dz);
+          if (distance < minDistance) {
+            validPosition = false;
+            break;
+          }
+        }
+      }
+      positions.push(position);
+    }
+    return positions;
   }
 }
