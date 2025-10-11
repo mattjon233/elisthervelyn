@@ -6,51 +6,70 @@ import './MissionUI.css';
  * UI para mostrar missão ativa e progresso, com funcionalidade de minimizar.
  */
 function MissionUI() {
-  const { activeMission, missionProgress, missionReadyToComplete } = useMissionStore();
+  const { activeMission, missionProgress } = useMissionStore();
   const [isMinimized, setIsMinimized] = useState(false);
 
   if (!activeMission) return null;
 
   const toggleMinimize = () => setIsMinimized(!isMinimized);
 
-  // Lógica customizada para a missão do Coconaro
+  // --- Lógica Unificada para Progresso ---
   const isCoconaroMission = activeMission.id === 'coconaro_boss_fight';
-  const coconaroProgress = isCoconaroMission ? (missionProgress?.cocos || 0) : missionProgress;
-  const coconaroRequired = isCoconaroMission ? activeMission.objetivos.alvos.cocos : activeMission.requiredCount;
-  const coconaroText = isCoconaroMission ? activeMission.objetivos.texto_ui : 'Progresso';
 
-  const progressPercent = (coconaroProgress / coconaroRequired) * 100;
+  const title = activeMission.title || activeMission.nome;
+  const description = activeMission.description || activeMission.descricao;
+
+  let currentProgress = 0;
+  let requiredCount = 0;
+  let progressText = 'Progresso';
+
+  if (isCoconaroMission) {
+    currentProgress = missionProgress?.cocos || 0;
+    requiredCount = activeMission.objetivos?.alvos?.cocos || 20;
+    progressText = activeMission.objetivos?.texto_ui || 'Coletar Cocos';
+  } else {
+    currentProgress = missionProgress || 0;
+    requiredCount = activeMission.requiredCount || 0;
+  }
+
+  const isMissionComplete = requiredCount > 0 && currentProgress >= requiredCount;
+  const progressPercent = requiredCount > 0 ? (currentProgress / requiredCount) * 100 : 0;
 
   return (
     <div className={`mission-ui ${isMinimized ? 'minimized' : ''}`}>
       <div className="mission-header" onClick={toggleMinimize}>
         <div className="mission-title-group">
           <span className="mission-icon">📜</span>
-          <h3>{activeMission.title}</h3>
+          <h3>
+            {title}
+            {isMinimized && requiredCount > 0 && ` (${currentProgress}/${requiredCount})`}
+          </h3>
         </div>
         <span className="minimize-icon">{isMinimized ? '[+]' : '[-]'}</span>
       </div>
 
       {!isMinimized && (
         <div className="mission-body">
-          <p className="mission-description">{activeMission.description || 'Elimine os inimigos que ameaçam a região.'}</p>
+          <p className="mission-description">{description || 'Elimine os inimigos que ameaçam a região.'}</p>
 
-          <div className="mission-progress">
-            <div className="progress-text">
-              <span>{coconaroText}</span>
-              <span className={coconaroProgress >= coconaroRequired ? 'complete' : ''}>
-                {coconaroProgress}/{coconaroRequired}
-              </span>
+          {requiredCount > 0 && (
+            <div className="mission-progress">
+              <div className="progress-text">
+                <span>{progressText}</span>
+                <span className={isMissionComplete ? 'complete' : ''}>
+                  {currentProgress}/{requiredCount}
+                </span>
+              </div>
+              <div className="progress-bar">
+                <div
+                  className="progress-fill"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
             </div>
-            <div className="progress-bar">
-              <div
-                className="progress-fill"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
-          </div>
+          )}
 
-          {missionReadyToComplete && (
+          {isMissionComplete && (
             <div className="mission-complete">
               ✅ Missão completa! Retorne ao Oráculo
             </div>

@@ -35,7 +35,13 @@ export class MissionService {
    * Obter missão por ID
    */
   getMission(missionId) {
-    const mission = this.missionData.missions.find(m => m.id === missionId);
+    // Primeiro, busca no array de missões padrão
+    let mission = this.missionData.missions.find(m => m.id === missionId);
+
+    // Se não encontrar, verifica se é uma missão especial (ex: boss) na raiz do JSON
+    if (!mission && this.missionData[missionId]) {
+      mission = this.missionData[missionId];
+    }
 
     if (!mission) {
       console.warn(`[MissionService] Missão não encontrada: ${missionId}`);

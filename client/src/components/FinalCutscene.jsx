@@ -3,29 +3,24 @@ import { useGameStore } from '../store/gameStore';
 import socketService from '../services/socket';
 import './IntroCinematic.css'; // Reutilizando estilos
 
-function FinalCutscene({ onComplete }) {
+function FinalCutscene({ onComplete, dialogueKey }) {
   const [dialogue, setDialogue] = useState(null);
 
   useEffect(() => {
-    const handleStart = ({ dialogueKey }) => {
-      // No futuro, poderia carregar o diálogo do servidor
-      const finalDialogue = {
-        speaker: 'Oráculo',
-        lines: [
-          'Vocês conseguiram! O Coração de Coconaro prova sua vitória!',
-          'A terra está finalmente livre da ameaça zumbi. A paz foi restaurada... por enquanto.',
-          'Obrigado, heroínas!'
-        ]
-      };
-      setDialogue(finalDialogue);
-
-      // Termina a cutscene após um tempo
-      setTimeout(onComplete, 10000);
+    // No futuro, poderia carregar o diálogo do servidor
+    const finalDialogue = {
+      speaker: 'Oráculo',
+      lines: [
+        'Vocês conseguiram! O Coração de Coconaro prova sua vitória!',
+        'A terra está finalmente livre da ameaça zumbi. A paz foi restaurada... por enquanto.',
+        'Obrigado, heroínas!'
+      ]
     };
+    setDialogue(finalDialogue);
 
-    socketService.on('final_cutscene_start', handleStart);
-    return () => socketService.off('final_cutscene_start', handleStart);
-  }, [onComplete]);
+    // Termina a cutscene após um tempo
+    setTimeout(onComplete, 10000);
+  }, [onComplete, dialogueKey]); // Add dialogueKey to dependencies
 
   if (!dialogue) {
     return null;

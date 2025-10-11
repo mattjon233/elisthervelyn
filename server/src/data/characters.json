@@ -26,7 +26,7 @@
       "classe": "Guerreira",
       "cor_principal": "#C71585",
       "stats": {
-        "vida_maxima": 150,
+        "vida_maxima": 100,
         "velocidade": 4.0,
         "estamina": 120
       },

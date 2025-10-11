@@ -25,12 +25,12 @@ const Rocket = forwardRef(({ position = [32, 0, 32] }, ref) => {
 
   const { 
     players, playerId, rocketState, isDead, currentDialogue,
-    isCinematicOpen, isSkillTreeOpen
+    isCinematicOpen, isSkillTreeOpen, isAnyCinematicActive
   } = useGameStore();
   const { upgrades, isShopOpen } = useShopStore();
 
   // Determina se alguma UI modal está ativa
-  const isUIActive = isShopOpen || isCinematicOpen || isSkillTreeOpen || currentDialogue || isDead;
+  const isUIActive = isShopOpen || isCinematicOpen || isSkillTreeOpen || currentDialogue || isDead || isAnyCinematicActive;
 
   // Parâmetros base do Rocket
   const baseSpeed = 3.5;

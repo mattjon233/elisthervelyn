@@ -27,7 +27,7 @@ function Game({ roomData }) {
   const { 
     players, playerId, isDead, lastDamageTime, lastHealTime, 
     isCinematicOpen, setIsCinematicOpen, setDead,
-    showMissionChoice 
+    showMissionChoice, setIsAnyCinematicActive // Import new setter
   } = useGameStore();
 
   const localPlayer = players.find(p => p.id === playerId);
@@ -61,16 +61,19 @@ function Game({ roomData }) {
 
   const handleCinematicComplete = useCallback(() => {
     setIsCinematicOpen(false);
-  }, [setIsCinematicOpen]);
+    setIsAnyCinematicActive(false); // Set to false when intro cinematic completes
+  }, [setIsCinematicOpen, setIsAnyCinematicActive]);
 
   // Listener para o final do jogo
   useEffect(() => {
     const handleFinalCutscene = () => {
       setShowFinalCutscene(true);
+      setIsAnyCinematicActive(true); // Set to true when final cutscene starts
     };
     const handleShowCredits = () => {
       setShowFinalCutscene(false); // Garante que a cutscene saia
       setShowCredits(true);
+      setIsAnyCinematicActive(true); // Set to true when credits start
     };
 
     socketService.on('final_cutscene_start', handleFinalCutscene);
@@ -80,7 +83,7 @@ function Game({ roomData }) {
       socketService.off('final_cutscene_start', handleFinalCutscene);
       socketService.off('show_credits', handleShowCredits);
     };
-  }, []);
+  }, [setIsAnyCinematicActive]); // Add setIsAnyCinematicActive to dependencies
 
   return (
     <div className="game-container">
@@ -91,11 +94,20 @@ function Game({ roomData }) {
 
       {/* Cutscene Final */}
       {showFinalCutscene && (
-        <FinalCutscene onComplete={() => setShowFinalCutscene(false)} />
+        <FinalCutscene 
+          dialogueKey="coconaro_derrotado" // Pass the dialogueKey
+          onComplete={() => {
+            setShowFinalCutscene(false);
+            setIsAnyCinematicActive(false); // Set to false when final cutscene completes
+          }}
+        />
       )}
 
       {/* Créditos */}
-      {showCredits && <Credits />}
+      {showCredits && <Credits onComplete={() => { // Assuming Credits component has onComplete
+        setShowCredits(false);
+        setIsAnyCinematicActive(false); // Set to false when credits complete
+      }} />}
 
       {/* Cena 3D */}
       <Canvas

@@ -333,7 +333,7 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
     }
 
     players.forEach((player) => {
-      if (player.id === playerId || !player.position) return;
+      if (player.id === playerId || !player.position || typeof player.position.x === 'undefined' || typeof player.position.z === 'undefined') return;
       const dx = player.position.x - playerPos.x;
       const dz = player.position.z - playerPos.z;
       const distance = Math.sqrt(dx * dx + dz * dz);
@@ -344,6 +344,19 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
         const pushZ = (playerPos.z - player.position.z) / distance * pushStrength;
         localPlayerRef.current.position.x += pushX;
         localPlayerRef.current.position.z += pushZ;
+      }
+    });
+
+    // Coleta de cocos por proximidade
+    coconuts.forEach(coco => {
+      // Safety check para garantir que o coco tem posição válida
+      if (typeof coco.x === 'undefined' || typeof coco.z === 'undefined') return;
+      
+      const cocoPos = new THREE.Vector3(coco.x, coco.y, coco.z);
+      const distance = playerPos.distanceTo(cocoPos);
+      
+      if (distance < 1.5) { // Raio de coleta
+        socketService.emit('collect_coconut', { coconutId: coco.id });
       }
     });
 

@@ -48,11 +48,13 @@ export const useGameStore = create((set, get) => ({
   isSkillTreeOpen: false,
   showMissionChoice: false, // Para exibir a UI de escolha de missão
   missionChoiceData: null,
+  isAnyCinematicActive: false, // New state to track any active cinematic
 
   // Actions
   setShowMissionChoice: (show, data) => set({ showMissionChoice: show, missionChoiceData: data }),
   setIsCinematicOpen: (isOpen) => set({ isCinematicOpen: isOpen }),
   setIsSkillTreeOpen: (isOpen) => set({ isSkillTreeOpen: isOpen }),
+  setIsAnyCinematicActive: (isActive) => set({ isAnyCinematicActive: isActive }), // New setter for any cinematic
   triggerDamageEffect: () => set({ lastDamageTime: Date.now() }),
   triggerHealEffect: () => set({ lastHealTime: Date.now() }),
 
