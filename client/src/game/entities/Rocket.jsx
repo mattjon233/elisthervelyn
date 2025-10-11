@@ -89,6 +89,72 @@ function Rocket({ position = [32, 0, 32] }) {
       tail.rotation.z = Math.sin(state.clock.elapsedTime * 10) * 0.3;
     }
 
+    // --- LÓGICA DE COLISÃO MANUAL (copiada de usePlayerControls.js) ---
+    const rocketRadius = 0.3; // Raio de colisão para o Rocket
+
+    // 1. Colisão com paredes do mapa
+    const mapLimit = 49;
+    rocket.position.x = Math.max(-mapLimit, Math.min(mapLimit, rocket.position.x));
+    rocket.position.z = Math.max(-mapLimit, Math.min(mapLimit, rocket.position.z));
+
+    // 2. Colisão com paredes da mansão
+    const mansionX = -30;
+    const mansionZ = 30;
+    const mansionWidth = 16;
+    const mansionDepth = 14;
+    const wallThickness = 0.5;
+    const left = mansionX - mansionWidth / 2;
+    const right = mansionX + mansionWidth / 2;
+    const front = mansionZ - mansionDepth / 2;
+    const back = mansionZ + mansionDepth / 2;
+    const doorWidth = 4;
+    const doorLeft = mansionX - doorWidth / 2;
+    const doorRight = mansionX + doorWidth / 2;
+
+    const rocketX = rocket.position.x;
+    const rocketZ = rocket.position.z;
+
+    if (rocketX >= left - rocketRadius && rocketX <= left + wallThickness + rocketRadius && rocketZ >= front && rocketZ <= back) {
+      rocket.position.x = left - rocketRadius;
+    }
+    if (rocketX >= right - wallThickness - rocketRadius && rocketX <= right + rocketRadius && rocketZ >= front && rocketZ <= back) {
+      rocket.position.x = right + rocketRadius;
+    }
+    if (rocketX >= left && rocketX <= doorLeft && rocketZ >= front - rocketRadius && rocketZ <= front + wallThickness + rocketRadius) {
+      rocket.position.z = front - rocketRadius;
+    }
+    if (rocketX >= doorRight && rocketX <= right && rocketZ >= front - rocketRadius && rocketZ <= front + wallThickness + rocketRadius) {
+      rocket.position.z = front - rocketRadius;
+    }
+    if (rocketX >= left && rocketX <= right && rocketZ >= back - wallThickness - rocketRadius && rocketZ <= back + rocketRadius) {
+      rocket.position.z = back + rocketRadius;
+    }
+
+    // 3. Colisão com objetos do cenário
+    const obstacles = [
+      { x: 10, z: -10, radius: 1.5 }, { x: -12, z: -8, radius: 1.2 },
+      { x: 15, z: 5, radius: 1.8 }, { x: -10, z: 8, radius: 1.3 },
+      { x: 8, z: 12, radius: 1.4 }, { x: -15, z: -15, radius: 1.6 },
+      { x: -5, z: -12, radius: 1.2 }, { x: 12, z: -5, radius: 0.9 },
+      { x: -8, z: 10, radius: 1.1 }, { x: 5, z: 15, radius: 0.9 },
+      { x: 18, z: -12, radius: 1.2 },
+    ];
+
+    obstacles.forEach(obstacle => {
+      const dx = rocket.position.x - obstacle.x;
+      const dz = rocket.position.z - obstacle.z;
+      const distance = Math.sqrt(dx * dx + dz * dz);
+
+      if (distance < obstacle.radius + rocketRadius) {
+        const angle = Math.atan2(dz, dx);
+        rocket.position.x = obstacle.x + Math.cos(angle) * (obstacle.radius + rocketRadius);
+        rocket.position.z = obstacle.z + Math.sin(angle) * (obstacle.radius + rocketRadius);
+      }
+    });
+
+    // --- FIM DA LÓGICA DE COLISÃO ---
+
+
     // --- SISTEMA DE CURA ---
     // Apenas o "host" (primeiro jogador da lista) deve executar a lógica de cura da área
     // para evitar que múltiplos clientes enviem os mesmos eventos de cura.
