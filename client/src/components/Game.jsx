@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import GameScene from '../game/GameScene';
 import GameUI from './GameUI';
@@ -7,6 +7,7 @@ import ShopUI from './ShopUI';
 import GameOverScreen from './GameOverScreen';
 import DamageOverlay from './DamageOverlay';
 import HealEffect from './HealEffect';
+import IntroCinematic from './IntroCinematic';
 import { useGameStore } from '../store/gameStore';
 import { usePrevious } from '../game/hooks/usePrevious';
 import './Game.css';
@@ -17,7 +18,10 @@ function Game({ roomData }) {
   const [invulnerabilityState, setInvulnerabilityState] = useState(null);
   const [stonePrompts, setStonePrompts] = useState({ showStonePrompt: false, showOracleDeliveryPrompt: false, hasStoneInInventory: false });
   const [healAmount, setHealAmount] = useState(5);
-  const { players, playerId, isDead, lastDamageTime, lastHealTime, respawnPlayer, setDead } = useGameStore();
+  const { 
+    players, playerId, isDead, lastDamageTime, lastHealTime, 
+    isCinematicOpen, setIsCinematicOpen, setDead 
+  } = useGameStore();
 
   const localPlayer = players.find(p => p.id === playerId);
   const prevPlayerState = usePrevious(localPlayer);
@@ -48,8 +52,17 @@ function Game({ roomData }) {
     }
   }, [localPlayer, prevPlayerState, isDead, setDead]);
 
+  const handleCinematicComplete = useCallback(() => {
+    setIsCinematicOpen(false);
+  }, [setIsCinematicOpen]);
+
   return (
     <div className="game-container">
+      {/* Cinematográfica de Introdução */}
+      {isCinematicOpen && (
+        <IntroCinematic onComplete={handleCinematicComplete} />
+      )}
+
       {/* Cena 3D */}
       <Canvas
         camera={{ position: [0, 10, 15], fov: 60 }}

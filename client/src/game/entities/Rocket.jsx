@@ -15,10 +15,14 @@ function Rocket({ position = [32, 0, 32] }) {
   const meshRef = useRef();
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
 
-  const players = useGameStore((state) => state.players);
-  const playerId = useGameStore((state) => state.playerId);
-  const rocketState = useGameStore((state) => state.rocketState);
-  const upgrades = useShopStore((state) => state.upgrades);
+  const { 
+    players, playerId, rocketState, isDead, currentDialogue,
+    isCinematicOpen, isSkillTreeOpen
+  } = useGameStore();
+  const { upgrades, isShopOpen } = useShopStore();
+
+  // Determina se alguma UI modal está ativa
+  const isUIActive = isShopOpen || isCinematicOpen || isSkillTreeOpen || currentDialogue || isDead;
 
   // Parâmetros base do Rocket
   const baseSpeed = 3.5;
@@ -113,10 +117,12 @@ function Rocket({ position = [32, 0, 32] }) {
 
   return (
     <group ref={meshRef} position={position}>
-      {/* Indicador de Cooldown */}
-      <Html position={[0, 1.2, 0]} center>
-        <CooldownTimer remainingTime={cooldownRemaining} duration={healInterval / 1000} />
-      </Html>
+      {/* Indicador de Cooldown - Visível apenas quando não há UI modal ativa */}
+      {!isUIActive && (
+        <Html position={[0, 1.2, 0]} center>
+          <CooldownTimer remainingTime={cooldownRemaining} duration={healInterval / 1000} />
+        </Html>
+      )}
 
       {/* Corpo do cachorro */}
       <mesh castShadow>

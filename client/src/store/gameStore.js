@@ -44,8 +44,12 @@ export const useGameStore = create((set, get) => ({
   isDead: false,
   lastDamageTime: null,
   lastHealTime: null,
+  isCinematicOpen: true, // A cinemática de introdução começa aberta
+  isSkillTreeOpen: false,
 
   // Actions
+  setIsCinematicOpen: (isOpen) => set({ isCinematicOpen: isOpen }),
+  setIsSkillTreeOpen: (isOpen) => set({ isSkillTreeOpen: isOpen }),
   triggerDamageEffect: () => set({ lastDamageTime: Date.now() }),
   triggerHealEffect: () => set({ lastHealTime: Date.now() }),
 

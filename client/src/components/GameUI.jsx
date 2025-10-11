@@ -11,12 +11,13 @@ import { useLevelStore } from '../store/levelStore';
 import { usePrevious } from '../game/hooks/usePrevious';
 
 function GameUI({ character, killCount = 0, abilityState, invulnerabilityState, stonePrompts = {} }) {
-  const { players, playerId, currentDialogue, triggerDamageEffect, triggerHealEffect } = useGameStore();
+  const { 
+    players, playerId, currentDialogue, triggerDamageEffect, triggerHealEffect, 
+    isSkillTreeOpen, setIsSkillTreeOpen 
+  } = useGameStore();
   const { teamGold, activeMission } = useMissionStore();
   const { potion } = useShopStore();
   const { currentLevel, currentXP, xpToNextLevel, skillPoints } = useLevelStore();
-
-  const [isSkillTreeOpen, setIsSkillTreeOpen] = useState(false);
 
   // Encontra os dados do jogador local na lista de jogadores
   const localPlayer = players.find(p => p.id === playerId);
@@ -83,13 +84,13 @@ function GameUI({ character, killCount = 0, abilityState, invulnerabilityState, 
   useEffect(() => {
     const handleSkillTreeKey = (e) => {
       if (e.key === 'k' || e.key === 'K') {
-        setIsSkillTreeOpen(prev => !prev);
+        setIsSkillTreeOpen(!isSkillTreeOpen);
       }
     };
 
     window.addEventListener('keydown', handleSkillTreeKey);
     return () => window.removeEventListener('keydown', handleSkillTreeKey);
-  }, []);
+  }, [isSkillTreeOpen, setIsSkillTreeOpen]);
 
   return (
     <div className="game-ui">

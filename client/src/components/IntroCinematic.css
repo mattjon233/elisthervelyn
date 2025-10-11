@@ -1,0 +1,141 @@
+/* === Estrutura Base da Cinemática === */
+.intro-cinematic {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: white;
+  font-family: 'Cinzel', serif; /* Fonte mais cinematográfica */
+}
+
+.intro-cinematic.fade-in {
+  animation: fadeIn 1s ease-out forwards;
+}
+
+.intro-cinematic.fade-out {
+  animation: fadeOut 1s ease-in forwards;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+.scene-background {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: radial-gradient(ellipse at center, #1b2735 0%, #090a0f 100%);
+  z-index: -2;
+}
+
+.vignette {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  box-shadow: inset 0 0 20vw rgba(0,0,0,0.7);
+  z-index: -1;
+}
+
+.scene-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 2rem;
+  animation: textAppear 1.5s ease-out;
+}
+
+@keyframes textAppear { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+.scene-text {
+  font-size: 2.5rem;
+  max-width: 80%;
+  text-shadow: 0 0 15px rgba(255,255,255,0.5);
+  line-height: 1.4;
+}
+
+.icons-container {
+  display: flex;
+  gap: 2rem;
+}
+
+.scene-icon {
+  font-size: 8rem;
+  filter: drop-shadow(0 0 15px rgba(255,255,255,0.3));
+}
+
+/* === Animações dos Ícones === */
+.scene-1 .scene-icon { animation: IconFloat 4s ease-in-out infinite; }
+.scene-2 .scene-icon { animation: IconPopIn 0.8s ease-out backwards; font-size: 6rem; }
+.scene-3 .scene-icon { font-size: 10rem; }
+.scene-4 .scene-icon { animation: ScaryShake 0.4s ease-in-out infinite; font-size: 7rem; }
+.scene-5 .scene-icon { animation: GlowPulse 2s ease-in-out infinite; font-size: 10rem; }
+.scene-6 .scene-icon { animation: OracleFloat 4s ease-in-out infinite; font-size: 8rem; }
+.scene-7 .scene-icon { animation: HeroGlow 2s ease-in-out infinite; }
+.scene-8 .scene-icon { animation: HeroicFlash 1s ease-out; font-size: 10rem; }
+
+@keyframes IconFloat { 50% { transform: translateY(-20px); } }
+@keyframes IconPopIn { from { opacity: 0; transform: scale(0) rotate(-180deg); } to { opacity: 1; transform: scale(1) rotate(0deg); } }
+@keyframes ScaryShake { 25% { transform: translate(-5px, 5px) rotate(-5deg); } 75% { transform: translate(5px, -5px) rotate(5deg); } }
+@keyframes GlowPulse { 50% { filter: drop-shadow(0 0 30px #fff); transform: scale(1.1); } }
+@keyframes OracleFloat { 50% { transform: translateY(-20px) scale(1.05); filter: drop-shadow(0 0 40px gold); } }
+@keyframes HeroGlow { 50% { filter: drop-shadow(0 0 30px gold); transform: scale(1.1); } }
+@keyframes HeroicFlash { 50% { filter: drop-shadow(0 0 50px white); transform: scale(1.2); } }
+
+/* === Estilos Específicos por Cena === */
+
+/* Cena 3: Força Sombria */
+.scene-3 {
+  animation: darkenScreen 2s 1s ease-in-out forwards;
+}
+@keyframes darkenScreen { to { background-color: rgba(0,0,0,0.5); } }
+
+/* Cena 4: Horda Zumbi */
+.scene-4 .scene-icon {
+  filter: drop-shadow(0 0 20px red);
+}
+
+/* Cena 6: A Profecia */
+.scene-6 .scene-text {
+  color: gold;
+  text-shadow: 0 0 15px gold;
+  animation: textGlow 2s ease-in-out infinite;
+}
+@keyframes textGlow { 50% { text-shadow: 0 0 30px gold; } }
+
+/* Cena 8: Chamado Aceito */
+.scene-8 {
+  animation: finalFlash 0.5s 0.5s ease-out;
+}
+@keyframes finalFlash { 50% { background-color: rgba(255,255,255,0.3); } }
+
+/* === UI (Botão e Barra) === */
+.skip-button {
+  position: absolute; bottom: 20px; right: 20px; z-index: 100;
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);
+  color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer;
+  transition: all 0.3s ease;
+}
+.skip-button:hover { background: rgba(255,255,255,0.2); transform: scale(1.05); }
+
+.progress-bar {
+  position: absolute; bottom: 0; left: 0; width: 100%; height: 4px;
+  background: rgba(255,255,255,0.1);
+}
+.progress-fill {
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, #ffd700, #ff8c00, #ffd700);
+  transform-origin: left;
+  animation: progressAnim linear forwards;
+}
+@keyframes progressAnim { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* === Responsividade === */
+@media (max-width: 768px) {
+  .scene-text { font-size: 1.5rem; }
+  .scene-icon { font-size: 5rem; }
+  .scene-2 .scene-icon { font-size: 4rem; }
+  .scene-4 .scene-icon { font-size: 4.5rem; }
+}
