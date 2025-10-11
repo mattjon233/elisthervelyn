@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useImperativeHandle, forwardRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Html } from '@react-three/drei';
@@ -8,13 +8,17 @@ import soundService from '../../services/soundService';
 import socketService from '../../services/socket';
 import CooldownTimer from '../../components/CooldownTimer';
 import { cemeteryObstacles } from './Cemetery';
+import { npcObstacles } from '../data/npcPositions';
 
 /**
  * Rocket - Cachorro NPC de suporte
  */
-function Rocket({ position = [32, 0, 32] }) {
+const Rocket = forwardRef(({ position = [32, 0, 32] }, ref) => {
   const meshRef = useRef();
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
+
+  // Expor a ref do mesh para o componente pai (GameScene)
+  useImperativeHandle(ref, () => meshRef.current);
 
   const { 
     players, playerId, rocketState, isDead, currentDialogue,
@@ -141,7 +145,7 @@ function Rocket({ position = [32, 0, 32] }) {
       { type: 'sphere', x: 18, z: -12, radius: 1.2 },
     ];
 
-    const allObstacles = [...staticObstacles, ...cemeteryObstacles];
+    const allObstacles = [...staticObstacles, ...cemeteryObstacles, ...npcObstacles];
 
     allObstacles.forEach(obstacle => {
       if (obstacle.type === 'sphere') {
@@ -309,6 +313,6 @@ function Rocket({ position = [32, 0, 32] }) {
       <pointLight color="#FFD700" intensity={0.3} distance={buffRadius} />
     </group>
   );
-}
+});
 
 export default Rocket;

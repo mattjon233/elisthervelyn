@@ -22,20 +22,19 @@ import soundService from '../services/soundService';
 import * as THREE from 'three';
 import { usePrevious } from './hooks/usePrevious';
 import { useLevelStore } from '../store/levelStore';
+import { tioUnclePosition } from './data/npcPositions';
 
 function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange, onInvulnerabilityStateChange, onStonePromptsChange }) {
 
   const localPlayerRef = useRef();
+  const rocketRef = useRef();
   const directionalLightRef = useRef();
 
-  // Bonuses das skills
   const { bonuses } = useLevelStore();
 
-  // Animação do sol
   useFrame(({ clock }) => {
     if (directionalLightRef.current) {
       const time = clock.getElapsedTime();
-      // Movimento circular lento do sol para girar as sombras suavemente
       const x = 10 * Math.cos(time * 0.02);
       const z = 10 * Math.sin(time * 0.02);
       directionalLightRef.current.position.x = x;
@@ -44,24 +43,15 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
   });
 
   const playerControlsRef = useRef(null);
-
   const [dyingEnemies, setDyingEnemies] = useState([]);
-
   const lastAttackTimeRef = useRef(0);
-
-  const hitEnemiesRef = useRef({}); // Rastreia inimigos atingidos por habilidade
-
-  // Estado da pedra preciosa
+  const hitEnemiesRef = useRef({});
   const [preciousStone, setPreciousStone] = useState(null);
   const [hasStoneInInventory, setHasStoneInInventory] = useState(false);
   const [showStonePrompt, setShowStonePrompt] = useState(false);
   const [showOracleDeliveryPrompt, setShowOracleDeliveryPrompt] = useState(false);
-
-
-
   const [killCount, setKillCount] = useState(0);
 
-  // Notificar mudança no kill count
   useEffect(() => {
     if (onKillCountChange) {
       onKillCountChange(killCount);
@@ -71,42 +61,30 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
   const { players, playerId, enemies, npcs, updatePlayerMovement } = useGameStore();
   const { potion, usePotion } = useShopStore();
 
-  // Posição fixa do Tio Uncle
-  const tioUnclePosition = [45, 0, 20];
-
-  // Listener para movimento de jogadores remotos
   useEffect(() => {
     const handlePlayerMoved = (data) => {
       updatePlayerMovement(data.playerId, data.position, data.rotation);
     };
-
     socketService.on('player_moved', handlePlayerMoved);
-
     return () => {
       socketService.off('player_moved', handlePlayerMoved);
     };
   }, [updatePlayerMovement]);
 
-  // Listener para atualizações de estado do servidor
   useEffect(() => {
     const handleStateUpdate = ({ enemies: serverEnemies, players: serverPlayers, rocketState }) => {
       useGameStore.getState().setEnemies(serverEnemies);
       useGameStore.getState().setPlayers(serverPlayers);
-
-      // Atualizar estado do Rocket se presente
       if (rocketState) {
         useGameStore.getState().setRocketState(rocketState);
       }
     };
-
     socketService.on('game_state_updated', handleStateUpdate);
-
     return () => {
       socketService.off('game_state_updated', handleStateUpdate);
     };
   }, []);
 
-  // Listener para atualizações de missão do servidor (colaborativa)
   useEffect(() => {
     const handleMissionUpdate = ({ activeMission, missionProgress, teamGold }) => {
       useMissionStore.setState({
@@ -116,63 +94,42 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
         teamGold: teamGold
       });
     };
-
     socketService.on('mission_updated', handleMissionUpdate);
-
     return () => {
       socketService.off('mission_updated', handleMissionUpdate);
     };
   }, []);
 
-  // Listener para ganho de XP
   useEffect(() => {
     const handleXPGained = ({ amount, reason }) => {
       const currentXP = useLevelStore.getState().currentXP;
-
-      console.log(`CLIENT: Evento xp_gained recebido - Jogador ${playerId}`);
       useLevelStore.getState().addXP(amount);
-
-      const reasonText = reason === 'monster_kill' ? 'Monstro morto' :
-                        reason === 'mission_complete' ? 'Missão completa' :
-                        reason === 'stone_delivered' ? 'Pedra entregue' : 'XP ganho';
-      console.log(`⭐ +${amount} XP (${reasonText}) - XP total: ${currentXP + amount}`);
     };
-
     socketService.on('xp_gained', handleXPGained);
-
     return () => {
       socketService.off('xp_gained', handleXPGained);
     };
   }, [playerId]);
 
-  // Listener para spawn da pedra preciosa
   useEffect(() => {
     const handleStoneSpawned = ({ position }) => {
-      console.log('💎 Pedra preciosa spawnou na posição:', position);
       setPreciousStone(position);
     };
-
     const handleStoneCollected = ({ playerId: collectorId }) => {
-      console.log('💎 Pedra preciosa coletada por:', collectorId);
       setPreciousStone(null);
       if (collectorId === playerId) {
         setHasStoneInInventory(true);
       }
     };
-
     const handleStoneDelivered = ({ playerId: delivererId }) => {
-      console.log(`💎 Pedra preciosa entregue ao Oráculo por ${delivererId}!`);
-      // Apenas o jogador que entregou deve limpar seu inventário
       if (delivererId === playerId) {
         setHasStoneInInventory(false);
         setShowOracleDeliveryPrompt(false);
       }
     };
-
     socketService.on('precious_stone_spawned', handleStoneSpawned);
     socketService.on('stone_collected', handleStoneCollected);
     socketService.on('stone_delivered', handleStoneDelivered);
-
     return () => {
       socketService.off('precious_stone_spawned', handleStoneSpawned);
       socketService.off('stone_collected', handleStoneCollected);
@@ -180,162 +137,107 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
     };
   }, [playerId]);
 
-  // Listener para uso de poção
   useEffect(() => {
     const handlePotionUsed = ({ healAmount, newHealth }) => {
-      console.log(`💊 Poção usada! Curou ${healAmount} HP (Vida: ${newHealth})`);
       soundService.playHealSound();
     };
-
     socketService.on('potion_used', handlePotionUsed);
-
     return () => {
       socketService.off('potion_used', handlePotionUsed);
     };
   }, []);
 
-  // Detectar tecla 1 para usar poção
   useEffect(() => {
     const handleKeyPress = (e) => {
       if (e.key === '1' && !isDead) {
         if (potion) {
-          console.log('💊 Tentando usar poção...');
           socketService.emit('use_potion');
-          usePotion(); // Remove da store local
+          usePotion();
         } else {
           console.log('❌ Você não tem nenhuma poção!');
         }
       }
     };
-
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [potion, isDead, usePotion]);
 
-  // DEBUG: Tecla B para matar todos os monstros
   useEffect(() => {
     const handleDebugKey = (e) => {
       if ((e.key === 'b' || e.key === 'B') && !isDead) {
-        console.log('🔧 DEBUG: Matando todos os monstros...');
         socketService.emit('debug_kill_all');
       }
-      // DEBUG: Tecla N para adicionar 1000 XP
       if ((e.key === 'n' || e.key === 'N') && !isDead) {
-        console.log('🔧 DEBUG: Adicionando 1000 XP...');
         useLevelStore.getState().addXP(1000);
       }
-      // DEBUG: Tecla M para mostrar status de skills
       if ((e.key === 'm' || e.key === 'M') && !isDead) {
         const state = useLevelStore.getState();
-        console.log('🔧 DEBUG Skills Status:', {
-          level: state.currentLevel,
-          xp: state.currentXP,
-          skillPoints: state.skillPoints,
-          skills: state.skills,
-          bonuses: state.bonuses
-        });
       }
     };
-
     window.addEventListener('keydown', handleDebugKey);
     return () => window.removeEventListener('keydown', handleDebugKey);
   }, [isDead]);
 
-  // Detectar tecla E para interagir (coletar pedra ou entregar ao Oráculo)
   useEffect(() => {
     const handleInteraction = (e) => {
       if ((e.key === 'e' || e.key === 'E') && !isDead) {
-        // Coletar pedra preciosa
         if (showStonePrompt && preciousStone) {
-          console.log('💎 Coletando pedra preciosa...');
           socketService.emit('collect_stone');
           setShowStonePrompt(false);
-        }
-        // Entregar pedra ao Oráculo
-        else if (showOracleDeliveryPrompt && hasStoneInInventory) {
-          console.log('💎 Entregando pedra ao Oráculo...');
+        } else if (showOracleDeliveryPrompt && hasStoneInInventory) {
           socketService.emit('deliver_stone');
         }
       }
     };
-
     window.addEventListener('keydown', handleInteraction);
     return () => window.removeEventListener('keydown', handleInteraction);
   }, [isDead, showStonePrompt, showOracleDeliveryPrompt, hasStoneInInventory, preciousStone]);
 
-  // Listener para mobile interact button
   useEffect(() => {
     const handleMobileInteract = (e) => {
       if (e.detail?.action === 'interact' && !isDead) {
-        // Coletar pedra preciosa
         if (showStonePrompt && preciousStone) {
-          console.log('💎 Coletando pedra preciosa (mobile)...');
           socketService.emit('collect_stone');
           setShowStonePrompt(false);
-        }
-        // Entregar pedra ao Oráculo
-        else if (showOracleDeliveryPrompt && hasStoneInInventory) {
-          console.log('💎 Entregando pedra ao Oráculo (mobile)...');
+        } else if (showOracleDeliveryPrompt && hasStoneInInventory) {
           socketService.emit('deliver_stone');
         }
       }
     };
-
     window.addEventListener('mobileInput', handleMobileInteract);
     return () => window.removeEventListener('mobileInput', handleMobileInteract);
   }, [isDead, showStonePrompt, showOracleDeliveryPrompt, hasStoneInInventory, preciousStone]);
 
-  // Lógica para detectar mortes de inimigos e atualizar kill count
   const prevEnemies = usePrevious(enemies);
 
   useEffect(() => {
     if (prevEnemies) {
       prevEnemies.forEach(prevEnemy => {
         const currentEnemy = enemies.find(e => e.id === prevEnemy.id);
-        // Se o inimigo existia e agora tem vida 0 (ou não existe mais)
         if (prevEnemy.health > 0 && (!currentEnemy || currentEnemy.health <= 0)) {
-          console.log(`CLIENT: Morte detectada para ${prevEnemy.id}`);
           soundService.playEnemyDeathSound();
           if (onKillCountChange) {
             onKillCountChange(prevCount => prevCount + 1);
           }
-          // Nota: O servidor agora controla o progresso da missão automaticamente
         }
       });
     }
   }, [enemies, prevEnemies, onKillCountChange]);
 
-  // Respawn de inimigos quando jogador morrer e renascer
   useEffect(() => {
     if (!isDead) {
-      // TODO: A lógica de respawn dos inimigos agora deve ser controlada pelo servidor
       setDyingEnemies([]);
     }
   }, [isDead]);
 
-  // Sistema de combate e colisão
   useFrame((state) => {
-    if (!localPlayerRef.current || isDead) return; // Parar tudo se morto
-
+    if (!localPlayerRef.current || isDead) return;
     const playerPos = localPlayerRef.current.position;
-
-    // Calcular dano base por personagem
-    const getBaseDamage = () => {
-      switch (character?.id) {
-        case 'esther': return 15; // Arqueira
-        case 'elissa': return 20; // Guerreira
-        case 'evelyn': return 12; // Maga
-        default: return 10;
-      }
-    };
-
-    // SISTEMA DE ATAQUE - Envia intenção de ataque para o servidor
     const isAttacking = playerControlsRef.current?.isAttacking;
     const currentTime = Date.now();
 
-    if (isAttacking && currentTime - lastAttackTimeRef.current > 500) { // Cooldown de 500ms
+    if (isAttacking && currentTime - lastAttackTimeRef.current > 500) {
       lastAttackTimeRef.current = currentTime;
-
       const attackRange = 2.5;
       const enemiesInRange = enemies.filter(enemy => {
         const dx = enemy.position[0] - playerPos.x;
@@ -343,132 +245,101 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
         const distance = Math.sqrt(dx * dx + dz * dz);
         return distance <= attackRange;
       });
-
       if (enemiesInRange.length > 0) {
         const enemyIds = enemiesInRange.map(e => e.id);
-        console.log(`CLIENT: Enviando ataque para inimigos:`, enemyIds, `[Dano x${bonuses.damageMultiplier}, Instakill ${bonuses.instakillChance * 100}%]`);
         socketService.sendAttack(enemyIds, null, bonuses.damageMultiplier, bonuses.instakillChance);
       }
     }
 
-    // SISTEMA DE HABILIDADES - Envia intenção para o servidor
     const activeAbilities = localPlayerRef.current?.activeAbilities || [];
-
     activeAbilities.forEach((ability) => {
       if (!hitEnemiesRef.current[ability.instanceId]) {
         hitEnemiesRef.current[ability.instanceId] = new Set();
       }
       const hitSet = hitEnemiesRef.current[ability.instanceId];
-
       switch (ability.type) {
-        case 'melee_area':
-          {
-            const enemiesInRange = enemies.filter(enemy => {
-              if (hitSet.has(enemy.id)) return false;
-              const dx = enemy.position[0] - playerPos.x;
-              const dz = enemy.position[2] - playerPos.z;
+        case 'melee_area': {
+          const enemiesInRange = enemies.filter(enemy => {
+            if (hitSet.has(enemy.id)) return false;
+            const dx = enemy.position[0] - playerPos.x;
+            const dz = enemy.position[2] - playerPos.z;
+            const distance = Math.sqrt(dx * dx + dz * dz);
+            return distance <= ability.range;
+          });
+          if (enemiesInRange.length > 0) {
+            const enemyIds = enemiesInRange.map(e => e.id);
+            enemyIds.forEach(id => hitSet.add(id));
+            socketService.sendAttack(enemyIds, ability.damage, bonuses.damageMultiplier, bonuses.instakillChance);
+          }
+          break;
+        }
+        case 'melee_area_heal': {
+          const enemiesInRange = enemies.filter(enemy => {
+            if (hitSet.has(enemy.id)) return false;
+            const dx = enemy.position[0] - playerPos.x;
+            const dz = enemy.position[2] - playerPos.z;
+            const distance = Math.sqrt(dx * dx + dz * dz);
+            return distance <= ability.range;
+          });
+          if (enemiesInRange.length > 0) {
+            const enemyIds = enemiesInRange.map(e => e.id);
+            enemyIds.forEach(id => hitSet.add(id));
+            socketService.sendAttack(enemyIds, ability.damage, bonuses.damageMultiplier, bonuses.instakillChance);
+          }
+          if (!hitSet.has('heal_applied')) {
+            hitSet.add('heal_applied');
+            const playersInRange = players.filter(player => {
+              if (!player.position) return false;
+              const dx = player.position.x - playerPos.x;
+              const dz = player.position.z - playerPos.z;
               const distance = Math.sqrt(dx * dx + dz * dz);
               return distance <= ability.range;
             });
-            if (enemiesInRange.length > 0) {
-              const enemyIds = enemiesInRange.map(e => e.id);
-              enemyIds.forEach(id => hitSet.add(id)); // Marcar como atingido
-              socketService.sendAttack(enemyIds, ability.damage, bonuses.damageMultiplier, bonuses.instakillChance);
-            }
-          }
-          break;
-        case 'melee_area_heal':
-          {
-            // Aplica dano em inimigos
-            const enemiesInRange = enemies.filter(enemy => {
-              if (hitSet.has(enemy.id)) return false;
-              const dx = enemy.position[0] - playerPos.x;
-              const dz = enemy.position[2] - playerPos.z;
-              const distance = Math.sqrt(dx * dx + dz * dz);
-              return distance <= ability.range;
+            playersInRange.forEach(player => {
+              socketService.emit('player_heal_area', { targetId: player.id, amount: ability.heal });
             });
-            if (enemiesInRange.length > 0) {
-              const enemyIds = enemiesInRange.map(e => e.id);
-              enemyIds.forEach(id => hitSet.add(id));
-              socketService.sendAttack(enemyIds, ability.damage, bonuses.damageMultiplier, bonuses.instakillChance);
-            }
-
-            // Aplica cura em área para todas as jogadoras (apenas uma vez por habilidade)
-            if (!hitSet.has('heal_applied')) {
-              hitSet.add('heal_applied');
-
-              // Curar todas as jogadoras em área (incluindo quem usou)
-              const playersInRange = players.filter(player => {
-                if (!player.position) return false;
-                const dx = player.position.x - playerPos.x;
-                const dz = player.position.z - playerPos.z;
-                const distance = Math.sqrt(dx * dx + dz * dz);
-                return distance <= ability.range;
-              });
-
-              // Enviar cura para cada jogadora em área
-              playersInRange.forEach(player => {
-                console.log(`💚 Explosão de Luz curou ${player.id} em ${ability.heal} HP!`);
-                socketService.emit('player_heal_area', {
-                  targetId: player.id,
-                  amount: ability.heal
-                });
-              });
-            }
           }
           break;
+        }
       }
     });
 
-    // Lógica de colisão do jogador local com inimigos
-    // NÃO empurrar se estiver atacando (para não atrapalhar combate)
     enemies.forEach((enemy) => {
-      if (enemy.health <= 0) return; // Ignorar inimigos mortos
-
+      if (enemy.health <= 0) return;
       const dx = enemy.position[0] - playerPos.x;
       const dz = enemy.position[2] - playerPos.z;
       const distance = Math.sqrt(dx * dx + dz * dz);
-
-      const collisionRadius = 0.8; // Raio de colisão mais ajustado
-
-      // Só empurra se NÃO estiver atacando
+      const collisionRadius = 0.8;
       if (distance < collisionRadius && distance > 0.01 && !isAttacking) {
-        // Calcula força de repulsão baseada na distância (quanto mais perto, mais forte)
-        const pushStrength = (collisionRadius - distance) / collisionRadius * 0.08; // Reduzido de 0.15 para 0.08
-
-        // Normaliza o vetor de direção
+        const pushStrength = (collisionRadius - distance) / collisionRadius * 0.08;
         const pushX = (playerPos.x - enemy.position[0]) / distance * pushStrength;
         const pushZ = (playerPos.z - enemy.position[2]) / distance * pushStrength;
-
-        // Aplica uma força para "empurrar" o jogador para longe do inimigo
         localPlayerRef.current.position.x += pushX;
         localPlayerRef.current.position.z += pushZ;
       }
     });
 
-    // Lógica de colisão com Tio Uncle
-    const tioUncleDx = tioUnclePosition[0] - playerPos.x;
-    const tioUncleDz = tioUnclePosition[2] - playerPos.z;
-    const tioUncleDistance = Math.sqrt(tioUncleDx * tioUncleDx + tioUncleDz * tioUncleDz);
-    const tioUncleCollisionRadius = 1.2; // Raio de colisão maior para NPC
-
-    if (tioUncleDistance < tioUncleCollisionRadius && tioUncleDistance > 0.01) {
-      const pushStrength = (tioUncleCollisionRadius - tioUncleDistance) / tioUncleCollisionRadius * 0.2;
-      const pushX = (playerPos.x - tioUnclePosition[0]) / tioUncleDistance * pushStrength;
-      const pushZ = (playerPos.z - tioUnclePosition[2]) / tioUncleDistance * pushStrength;
-      localPlayerRef.current.position.x += pushX;
-      localPlayerRef.current.position.z += pushZ;
+    if (rocketRef.current) {
+      const rocketPos = rocketRef.current.position;
+      const rocketDx = rocketPos.x - playerPos.x;
+      const rocketDz = rocketPos.z - playerPos.z;
+      const rocketDistance = Math.sqrt(rocketDx * rocketDx + rocketDz * rocketDz);
+      const rocketCollisionRadius = 0.8;
+      if (rocketDistance < rocketCollisionRadius && rocketDistance > 0.01) {
+        const pushStrength = (rocketCollisionRadius - rocketDistance) / rocketCollisionRadius * 0.15;
+        const pushX = (playerPos.x - rocketPos.x) / rocketDistance * pushStrength;
+        const pushZ = (playerPos.z - rocketPos.z) / rocketDistance * pushStrength;
+        localPlayerRef.current.position.x += pushX;
+        localPlayerRef.current.position.z += pushZ;
+      }
     }
 
-    // Colisão entre jogadores (impedir overlap)
     players.forEach((player) => {
-      if (player.id === playerId || !player.position) return; // Ignorar si mesmo
-
+      if (player.id === playerId || !player.position) return;
       const dx = player.position.x - playerPos.x;
       const dz = player.position.z - playerPos.z;
       const distance = Math.sqrt(dx * dx + dz * dz);
       const playerCollisionRadius = 0.6;
-
       if (distance < playerCollisionRadius && distance > 0.01) {
         const pushStrength = (playerCollisionRadius - distance) / playerCollisionRadius * 0.1;
         const pushX = (playerPos.x - player.position.x) / distance * pushStrength;
@@ -478,58 +349,33 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
       }
     });
 
-    // Limites do mapa (boundary checking)
-    const mapBoundary = 50; // Mapa é -50 a 50 em X e Z
-    if (localPlayerRef.current.position.x > mapBoundary) {
-      localPlayerRef.current.position.x = mapBoundary;
-    }
-    if (localPlayerRef.current.position.x < -mapBoundary) {
-      localPlayerRef.current.position.x = -mapBoundary;
-    }
-    if (localPlayerRef.current.position.z > mapBoundary) {
-      localPlayerRef.current.position.z = mapBoundary;
-    }
-    if (localPlayerRef.current.position.z < -mapBoundary) {
-      localPlayerRef.current.position.z = -mapBoundary;
-    }
+    const mapBoundary = 50;
+    if (localPlayerRef.current.position.x > mapBoundary) localPlayerRef.current.position.x = mapBoundary;
+    if (localPlayerRef.current.position.x < -mapBoundary) localPlayerRef.current.position.x = -mapBoundary;
+    if (localPlayerRef.current.position.z > mapBoundary) localPlayerRef.current.position.z = mapBoundary;
+    if (localPlayerRef.current.position.z < -mapBoundary) localPlayerRef.current.position.z = -mapBoundary;
 
-    // Lógica de proximidade com pedra preciosa
     if (preciousStone && !hasStoneInInventory) {
       const stoneDx = preciousStone.x - playerPos.x;
       const stoneDz = preciousStone.z - playerPos.z;
       const stoneDistance = Math.sqrt(stoneDx * stoneDx + stoneDz * stoneDz);
       const stoneInteractionRadius = 2.0;
-
-      if (stoneDistance < stoneInteractionRadius) {
-        setShowStonePrompt(true);
-      } else {
-        setShowStonePrompt(false);
-      }
+      setShowStonePrompt(stoneDistance < stoneInteractionRadius);
     } else {
       setShowStonePrompt(false);
     }
 
-    // Lógica de proximidade com Oráculo para entregar pedra
     if (hasStoneInInventory) {
-      const oraclePosition = [30, 0, 30]; // Posição do Oráculo
+      const oraclePosition = [30, 0, 30];
       const oracleDx = oraclePosition[0] - playerPos.x;
       const oracleDz = oraclePosition[2] - playerPos.z;
       const oracleDistance = Math.sqrt(oracleDx * oracleDx + oracleDz * oracleDz);
       const oracleInteractionRadius = 3.0;
-
-      if (oracleDistance < oracleInteractionRadius) {
-        setShowOracleDeliveryPrompt(true);
-      } else {
-        setShowOracleDeliveryPrompt(false);
-      }
+      setShowOracleDeliveryPrompt(oracleDistance < oracleInteractionRadius);
     } else {
       setShowOracleDeliveryPrompt(false);
     }
 
-    // Garante que o jogador fique no chão (mas permite pequeno bounce da caminhada)
-    // Não fazer nada aqui - a altura é controlada pelo usePlayerControls
-
-    // Limpeza de instâncias de habilidades que já terminaram
     const activeInstanceIds = new Set(activeAbilities.map(a => a.instanceId));
     for (const instanceId in hitEnemiesRef.current) {
       if (!activeInstanceIds.has(instanceId)) {
@@ -537,36 +383,19 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
       }
     }
 
-    // Passar estado da habilidade para a UI
-    if (onAbilityStateChange) {
-      onAbilityStateChange(localPlayerRef.current?.abilityState);
-    }
-
-    // Passar estado da invulnerabilidade para a UI
-    if (onInvulnerabilityStateChange) {
-      onInvulnerabilityStateChange(localPlayerRef.current?.invulnerability);
-    }
-
-    // Passar estado dos prompts de pedra para a UI
-    if (onStonePromptsChange) {
-      onStonePromptsChange({
-        showStonePrompt,
-        showOracleDeliveryPrompt,
-        hasStoneInInventory
-      });
-    }
+    if (onAbilityStateChange) onAbilityStateChange(localPlayerRef.current?.abilityState);
+    if (onInvulnerabilityStateChange) onInvulnerabilityStateChange(localPlayerRef.current?.invulnerability);
+    if (onStonePromptsChange) onStonePromptsChange({ showStonePrompt, showOracleDeliveryPrompt, hasStoneInInventory });
   });
 
-  // Coletar posições dos jogadores para Rocket seguir
   const playerPositions = players.map(p => p.position).filter(Boolean);
 
   return (
     <>
-      {/* Iluminação Aprimorada */}
       <ambientLight intensity={0.8} />
       <directionalLight
         ref={directionalLightRef}
-        position={[10, 50, 10]} // Sol bem alto e mais próximo
+        position={[10, 50, 10]}
         intensity={2.0}
         castShadow
         shadow-mapSize-width={2048}
@@ -577,85 +406,40 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
         shadow-camera-right={50}
         shadow-camera-top={50}
         shadow-camera-bottom={-50}
-        shadow-bias={-0.00005} // Sombra mais próxima do objeto
+        shadow-bias={-0.00005}
         shadow-normalBias={0.02}
       />
-
-      {/* Céu */}
-      <Sky
-        sunPosition={[100, 20, 100]}
-        turbidity={8}
-        rayleigh={2}
-        mieCoefficient={0.005}
-        mieDirectionalG={0.8}
-      />
-
-      {/* Chão */}
+      <Sky sunPosition={[100, 20, 100]} turbidity={8} rayleigh={2} mieCoefficient={0.005} mieDirectionalG={0.8} />
       <Ground />
-
-      {/* Barreiras do mapa */}
       <MapBoundary />
-
-      {/* Mansão no canto inferior esquerdo */}
       <Mansion />
-
-      {/* Cemitério no canto superior direito */}
       <Cemetery />
-
-      {/* Tio Uncle */}
       <TioUncle 
-        position={tioUnclePosition} 
+        position={[tioUnclePosition.x, tioUnclePosition.y, tioUnclePosition.z]} 
         playerPosition={localPlayerRef.current?.position ? [localPlayerRef.current.position.x, localPlayerRef.current.position.y, localPlayerRef.current.position.z] : [0, 0, 0]} 
       />
-
-      {/* Oráculo */}
       <Oracle
         playerPosition={localPlayerRef.current?.position ? [localPlayerRef.current.position.x, localPlayerRef.current.position.y, localPlayerRef.current.position.z] : [0, 0, 0]}
         preciousStoneActive={preciousStone !== null && !hasStoneInInventory}
       />
-
-      {/* Pedra Preciosa */}
       {preciousStone && !hasStoneInInventory && (
         <PreciousStone position={[preciousStone.x, preciousStone.y, preciousStone.z]} />
       )}
-
-      {/* NPCs passivos (não atacam nem tomam dano) */}
-      {npcs.map((npc) => {
-        if (npc.type === 'tia_rose') {
-          return (
-            <TiaRose
-              key={npc.id}
-              playerPosition={localPlayerRef.current?.position ? [localPlayerRef.current.position.x, localPlayerRef.current.position.y, localPlayerRef.current.position.z] : [0, 0, 0]}
-            />
-          );
-        }
-        if (npc.type === 'rocket') {
-          return (
-            <Rocket
-              key={npc.id}
-            />
-          );
-        }
-        return null;
-      })}
-
-      {/* Jogador Local - Respawn perto do Oracle */}
+      <TiaRose 
+        playerPosition={localPlayerRef.current?.position ? [localPlayerRef.current.position.x, localPlayerRef.current.position.y, localPlayerRef.current.position.z] : [0, 0, 0]}
+      />
+      <Rocket ref={rocketRef} />
       <Player
         ref={localPlayerRef}
         character={character}
         position={[32, 0.5, 32]}
         isLocalPlayer={true}
-        onControlsReady={(controls) => {
-          playerControlsRef.current = controls;
-        }}
-        enemies={enemies} // Passa a lista de inimigos
+        onControlsReady={(controls) => { playerControlsRef.current = controls; }}
+        enemies={enemies}
         onAbilityHitTarget={(ability, enemyId) => {
-          // Dano de alvo único (flecha) é enviado para o servidor com o dano da habilidade
-          console.log(`🎯 Habilidade ${ability.name} atingiu ${enemyId} causando ${ability.damage} de dano`);
           socketService.sendAttack([enemyId], ability.damage, bonuses.damageMultiplier, bonuses.instakillChance);
         }}
         onAbilityImpact={(ability, impactPosition) => {
-          // Dano em área (meteoro) é calculado e enviado para o servidor com o dano da habilidade
           const enemiesInRange = enemies.filter(enemy => {
             const dx = enemy.position[0] - impactPosition.x;
             const dz = enemy.position[2] - impactPosition.z;
@@ -664,79 +448,42 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
           });
           if (enemiesInRange.length > 0) {
             const enemyIds = enemiesInRange.map(e => e.id);
-            console.log(`💥 Habilidade ${ability.name} atingiu ${enemyIds.length} inimigos causando ${ability.damage} de dano cada`);
             socketService.sendAttack(enemyIds, ability.damage, bonuses.damageMultiplier, bonuses.instakillChance);
           }
         }}
       />
-
-      {/* Jogadores Remotos */}
       {players.filter(p => p.id !== playerId).map((player) => {
-        // DEBUG: Ver o que tem no player remoto
         if (!player.stats && !player.character) {
           console.warn('⚠️ Jogador remoto sem character:', player.id, player);
         }
-
         return (
           <Player
             key={player.id}
-            character={player.stats || player.character} // Tenta stats ou character
+            character={player.stats || player.character}
             position={[player.position?.x || 0, player.position?.y || 0.5, player.position?.z || 0]}
             isLocalPlayer={false}
           />
         );
       })}
-
-      {/* Inimigos */}
       {enemies.map((enemy) => {
         if (enemy.health > 0) {
           if (enemy.type === 'zombie') {
-            return (
-              <Zombie
-                key={enemy.id}
-                id={enemy.id}
-                position={enemy.position}
-                health={enemy.health}
-                maxHealth={enemy.maxHealth}
-              />
-            );
+            return <Zombie key={enemy.id} id={enemy.id} position={enemy.position} health={enemy.health} maxHealth={enemy.maxHealth} />;
           }
           if (enemy.type === 'ghost') {
-            return (
-              <Ghost
-                key={enemy.id}
-                id={enemy.id}
-                position={enemy.position}
-                health={enemy.health}
-                maxHealth={enemy.maxHealth}
-              />
-            );
+            return <Ghost key={enemy.id} id={enemy.id} position={enemy.position} health={enemy.health} maxHealth={enemy.maxHealth} />;
           }
         } else {
-          // Se o inimigo não foi renderizado antes (primeira vez com health 0), mostra animação
-          // A "key" diferente garante que o componente seja novo
-          return (
-            <DeathAnimation
-              key={`${enemy.id}-death`}
-              position={enemy.position}
-              type={enemy.type}
-              onComplete={() => {
-                // Eventualmente o servidor vai parar de enviar este inimigo
-              }}
-            />
-          );
+          return <DeathAnimation key={`${enemy.id}-death`} position={enemy.position} type={enemy.type} onComplete={() => {}} />;
         }
         return null;
       })}
-
-      {/* Animações de morte */}
       {dyingEnemies.map((enemy) => (
         <DeathAnimation
           key={`death-${enemy.id}`}
           position={enemy.position}
           type={enemy.type}
           onComplete={() => {
-            // Remover da lista após animação
             setDyingEnemies((prev) => prev.filter((e) => e.id !== enemy.id));
           }}
         />

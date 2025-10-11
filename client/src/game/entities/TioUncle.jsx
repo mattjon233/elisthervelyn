@@ -8,7 +8,7 @@ import SpeechBubble from './SpeechBubble';
 /**
  * Tio Uncle - NPC que vende melhorias
  */
-function TioUncle({ position = [45, 0, -45], playerPosition = [0, 0, 0] }) {
+function TioUncle({ position, playerPosition = [0, 0, 0] }) {
   const meshRef = useRef();
   const ringRef = useRef();
   const [isPlayerNearby, setIsPlayerNearby] = useState(false);

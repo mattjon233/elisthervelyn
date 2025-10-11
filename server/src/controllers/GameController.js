@@ -180,11 +180,8 @@ export class GameController {
     // O servidor agora é o dono da lista de inimigos
     room.enemies = this.gameService.getInitialEnemies();
 
-    // NPCs passivos (não atacam nem tomam dano)
-    room.npcs = [
-      { id: 'rocket_npc', type: 'rocket', position: [0, 0.5, 2] },
-      { id: 'tia_rose_npc', type: 'tia_rose', position: [-35, 0, -35] }
-    ];
+    // NPCs agora são estáticos no cliente, este array pode ser usado para NPCs dinâmicos no futuro
+    room.npcs = [];
 
     // Carregar diálogo de introdução
     const introDialogue = await this.dialogueService.getDialogue('intro');

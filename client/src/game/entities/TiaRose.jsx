@@ -6,6 +6,7 @@ import { useMissionStore } from '../../store/missionStore';
 import { useShopStore } from '../../store/shopStore';
 import socketService from '../../services/socket';
 import SpeechBubble from './SpeechBubble';
+import { tiaRosePosition } from '../data/npcPositions';
 
 /**
  * TiaRose - NPC que vende poções
@@ -22,9 +23,6 @@ function TiaRose({ playerPosition = [0, 0, 0] }) {
   const { teamGold } = useMissionStore();
   const { potion, hasReceivedFreePotion, buyPotion } = useShopStore();
 
-  // Posição da Tia Rose no canto oposto ao Oráculo
-  const tiaRosePosition = [-35, 0, -35];
-
   useFrame((state) => {
     // Animar anel de interação
     if (ringRef.current && isPlayerNearby) {
@@ -32,7 +30,7 @@ function TiaRose({ playerPosition = [0, 0, 0] }) {
     }
 
     // Verificar proximidade do jogador
-    const npcPos = new THREE.Vector3(tiaRosePosition[0], 0, tiaRosePosition[2]);
+    const npcPos = new THREE.Vector3(tiaRosePosition.x, 0, tiaRosePosition.z);
     const playerPos = new THREE.Vector3(playerPosition[0], 0, playerPosition[2]);
     const distance = npcPos.distanceTo(playerPos);
 
@@ -124,7 +122,7 @@ function TiaRose({ playerPosition = [0, 0, 0] }) {
   }
 
   return (
-    <group position={tiaRosePosition}>
+    <group position={[tiaRosePosition.x, tiaRosePosition.y, tiaRosePosition.z]}>
       {/* Corpo - vestido longo */}
       <mesh position={[0, 1.0, 0]} castShadow>
         <cylinderGeometry args={[0.5, 0.7, 2.0, 8]} />

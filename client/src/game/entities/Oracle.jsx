@@ -6,6 +6,7 @@ import { useMissionStore } from '../../store/missionStore';
 import { useGameStore } from '../../store/gameStore';
 import socketService from '../../services/socket';
 import SpeechBubble from './SpeechBubble';
+import { oraclePosition } from '../data/npcPositions';
 
 /**
  * Oracle - NPC que dá missões
@@ -20,9 +21,6 @@ function Oracle({ playerPosition = [0, 0, 0], preciousStoneActive = false }) {
 
   const { activeMission, missionReadyToComplete, acceptMission, completeMission } = useMissionStore();
 
-  // Posição do Oracle no canto do mapa
-  const oraclePosition = [35, 0, 35];
-
   useFrame((state) => {
     // Animar anel de interação
     if (ringRef.current && isPlayerNearby) {
@@ -30,7 +28,7 @@ function Oracle({ playerPosition = [0, 0, 0], preciousStoneActive = false }) {
     }
 
     // Verificar proximidade do jogador
-    const oraclePos = new THREE.Vector3(oraclePosition[0], 0, oraclePosition[2]);
+    const oraclePos = new THREE.Vector3(oraclePosition.x, 0, oraclePosition.z);
     const playerPos = new THREE.Vector3(playerPosition[0], 0, playerPosition[2]);
     const distance = oraclePos.distanceTo(playerPos);
 
@@ -97,7 +95,7 @@ function Oracle({ playerPosition = [0, 0, 0], preciousStoneActive = false }) {
   }
 
   return (
-    <group position={oraclePosition}>
+    <group position={[oraclePosition.x, oraclePosition.y, oraclePosition.z]}>
       {/* Corpo (túnica longa) */}
       <mesh position={[0, 1.2, 0]} castShadow>
         <cylinderGeometry args={[0.6, 0.8, 2.4, 8]} />
