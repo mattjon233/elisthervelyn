@@ -4,7 +4,10 @@ import * as THREE from 'three';
 import { useShopStore } from '../../store/shopStore';
 import socketService from '../../services/socket';
 import { cemeteryObstacles } from '../entities/Cemetery';
+import { playgroundObstacles } from '../entities/Playground';
+import { foodCourtObstacles } from '../entities/FoodCourt';
 import { npcObstacles } from '../data/npcPositions';
+import { friendlyNpcObstacles } from '../data/friendlyNpcData';
 
 /**
  * Hook para controlar movimento do personagem
@@ -397,7 +400,7 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
       { type: 'sphere', x: 18, z: -12, radius: 1.2 },
     ];
 
-    const allObstacles = [...staticObstacles, ...cemeteryObstacles, ...npcObstacles];
+    const allObstacles = [...staticObstacles, ...cemeteryObstacles, ...npcObstacles, ...playgroundObstacles, ...foodCourtObstacles, ...friendlyNpcObstacles];
 
     allObstacles.forEach(obstacle => {
       const playerX = playerRef.current.position.x;

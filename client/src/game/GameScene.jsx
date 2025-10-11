@@ -7,7 +7,11 @@ import TiaRose from './entities/TiaRose';
 import Mansion from './entities/Mansion';
 import MapBoundary from './entities/MapBoundary';
 import Cemetery from './entities/Cemetery';
+import Playground from './entities/Playground';
+import FoodCourt from './entities/FoodCourt';
 import Player from './entities/Player';
+import FriendlyNPC from './entities/FriendlyNPC';
+import friendlyNpcData from './data/friendlyNpcData';
 import Zombie from './entities/Zombie';
 import Ghost from './entities/Ghost';
 import Rocket from './entities/Rocket';
@@ -413,18 +417,42 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
       <Ground />
       <MapBoundary />
       <Mansion />
+      {/* Cemitério no canto superior direito */}
       <Cemetery />
+
+      {/* Parquinho no canto superior esquerdo */}
+      <Playground />
+
+      {/* Praça de Alimentação no canto inferior esquerdo */}
+      <FoodCourt />
+
+      {/* Tio Uncle */}
       <TioUncle 
         position={[tioUnclePosition.x, tioUnclePosition.y, tioUnclePosition.z]} 
         playerPosition={localPlayerRef.current?.position ? [localPlayerRef.current.position.x, localPlayerRef.current.position.y, localPlayerRef.current.position.z] : [0, 0, 0]} 
       />
+
+      {/* Oráculo */}
       <Oracle
         playerPosition={localPlayerRef.current?.position ? [localPlayerRef.current.position.x, localPlayerRef.current.position.y, localPlayerRef.current.position.z] : [0, 0, 0]}
         preciousStoneActive={preciousStone !== null && !hasStoneInInventory}
       />
+
+      {/* Pedra Preciosa */}
       {preciousStone && !hasStoneInInventory && (
         <PreciousStone position={[preciousStone.x, preciousStone.y, preciousStone.z]} />
       )}
+
+      {/* NPCs Amigáveis */}
+      {friendlyNpcData.map(npc => (
+        <FriendlyNPC 
+          key={npc.id} 
+          npcData={npc} 
+          playerPosition={localPlayerRef.current?.position ? [localPlayerRef.current.position.x, localPlayerRef.current.position.y, localPlayerRef.current.position.z] : [0, 0, 0]}
+        />
+      ))}
+
+      {/* NPCs Estáticos */}
       <TiaRose 
         playerPosition={localPlayerRef.current?.position ? [localPlayerRef.current.position.x, localPlayerRef.current.position.y, localPlayerRef.current.position.z] : [0, 0, 0]}
       />

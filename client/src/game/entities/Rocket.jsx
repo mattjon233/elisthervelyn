@@ -8,7 +8,10 @@ import soundService from '../../services/soundService';
 import socketService from '../../services/socket';
 import CooldownTimer from '../../components/CooldownTimer';
 import { cemeteryObstacles } from './Cemetery';
+import { playgroundObstacles } from './Playground';
+import { foodCourtObstacles } from './FoodCourt';
 import { npcObstacles } from '../data/npcPositions';
+import { friendlyNpcObstacles } from '../data/friendlyNpcData';
 
 /**
  * Rocket - Cachorro NPC de suporte
@@ -145,7 +148,7 @@ const Rocket = forwardRef(({ position = [32, 0, 32] }, ref) => {
       { type: 'sphere', x: 18, z: -12, radius: 1.2 },
     ];
 
-    const allObstacles = [...staticObstacles, ...cemeteryObstacles, ...npcObstacles];
+    const allObstacles = [...staticObstacles, ...cemeteryObstacles, ...npcObstacles, ...playgroundObstacles, ...foodCourtObstacles, ...friendlyNpcObstacles];
 
     allObstacles.forEach(obstacle => {
       if (obstacle.type === 'sphere') {
