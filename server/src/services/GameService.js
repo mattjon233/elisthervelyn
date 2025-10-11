@@ -57,6 +57,18 @@ export class GameService {
       { id: 'z9', type: 'zombie', position: [-15, 0.5, -3], health: 100, maxHealth: 100 },
       { id: 'z10', type: 'zombie', position: [-18, 0.5, 5], health: 100, maxHealth: 100 },
 
+      // Zombies - Grupo 5 (Cemitério)
+      { id: 'z11', type: 'zombie', position: [30, 0.5, -30], health: 100, maxHealth: 100 },
+      { id: 'z12', type: 'zombie', position: [32, 0.5, -32], health: 100, maxHealth: 100 },
+      { id: 'z13', type: 'zombie', position: [38, 0.5, -38], health: 100, maxHealth: 100 },
+      { id: 'z14', type: 'zombie', position: [40, 0.5, -40], health: 100, maxHealth: 100 },
+      { id: 'z15', type: 'zombie', position: [28, 0.5, -35], health: 100, maxHealth: 100 },
+      { id: 'z16', type: 'zombie', position: [42, 0.5, -35], health: 100, maxHealth: 100 },
+      { id: 'z17', type: 'zombie', position: [35, 0.5, -28], health: 100, maxHealth: 100 },
+      { id: 'z18', type: 'zombie', position: [35, 0.5, -42], health: 100, maxHealth: 100 },
+      { id: 'z19', type: 'zombie', position: [27, 0.5, -40], health: 100, maxHealth: 100 },
+      { id: 'z20', type: 'zombie', position: [43, 0.5, -30], health: 100, maxHealth: 100 },
+
       // Fantasmas espalhados
       { id: 'g1', type: 'ghost', position: [-10, 1, -15], health: 75, maxHealth: 75 },
       { id: 'g2', type: 'ghost', position: [12, 1, -18], health: 75, maxHealth: 75 },

@@ -7,6 +7,7 @@ import { useShopStore } from '../../store/shopStore';
 import soundService from '../../services/soundService';
 import socketService from '../../services/socket';
 import CooldownTimer from '../../components/CooldownTimer';
+import { cemeteryObstacles } from './Cemetery';
 
 /**
  * Rocket - Cachorro NPC de suporte
@@ -89,7 +90,7 @@ function Rocket({ position = [32, 0, 32] }) {
       tail.rotation.z = Math.sin(state.clock.elapsedTime * 10) * 0.3;
     }
 
-    // --- LÓGICA DE COLISÃO MANUAL (copiada de usePlayerControls.js) ---
+    // --- LÓGICA DE COLISÃO MANUAL (sincronizada com usePlayerControls.js) ---
     const rocketRadius = 0.3; // Raio de colisão para o Rocket
 
     // 1. Colisão com paredes do mapa
@@ -130,25 +131,60 @@ function Rocket({ position = [32, 0, 32] }) {
       rocket.position.z = back + rocketRadius;
     }
 
-    // 3. Colisão com objetos do cenário
-    const obstacles = [
-      { x: 10, z: -10, radius: 1.5 }, { x: -12, z: -8, radius: 1.2 },
-      { x: 15, z: 5, radius: 1.8 }, { x: -10, z: 8, radius: 1.3 },
-      { x: 8, z: 12, radius: 1.4 }, { x: -15, z: -15, radius: 1.6 },
-      { x: -5, z: -12, radius: 1.2 }, { x: 12, z: -5, radius: 0.9 },
-      { x: -8, z: 10, radius: 1.1 }, { x: 5, z: 15, radius: 0.9 },
-      { x: 18, z: -12, radius: 1.2 },
+    // 3. Colisão com objetos do cenário (incluindo cemitério)
+    const staticObstacles = [
+      { type: 'sphere', x: 10, z: -10, radius: 1.5 }, { type: 'sphere', x: -12, z: -8, radius: 1.2 },
+      { type: 'sphere', x: 15, z: 5, radius: 1.8 }, { type: 'sphere', x: -10, z: 8, radius: 1.3 },
+      { type: 'sphere', x: 8, z: 12, radius: 1.4 }, { type: 'sphere', x: -15, z: -15, radius: 1.6 },
+      { type: 'sphere', x: -5, z: -12, radius: 1.2 }, { type: 'sphere', x: 12, z: -5, radius: 0.9 },
+      { type: 'sphere', x: -8, z: 10, radius: 1.1 }, { type: 'sphere', x: 5, z: 15, radius: 0.9 },
+      { type: 'sphere', x: 18, z: -12, radius: 1.2 },
     ];
 
-    obstacles.forEach(obstacle => {
-      const dx = rocket.position.x - obstacle.x;
-      const dz = rocket.position.z - obstacle.z;
-      const distance = Math.sqrt(dx * dx + dz * dz);
+    const allObstacles = [...staticObstacles, ...cemeteryObstacles];
 
-      if (distance < obstacle.radius + rocketRadius) {
-        const angle = Math.atan2(dz, dx);
-        rocket.position.x = obstacle.x + Math.cos(angle) * (obstacle.radius + rocketRadius);
-        rocket.position.z = obstacle.z + Math.sin(angle) * (obstacle.radius + rocketRadius);
+    allObstacles.forEach(obstacle => {
+      if (obstacle.type === 'sphere') {
+        const dx = rocket.position.x - obstacle.x;
+        const dz = rocket.position.z - obstacle.z;
+        const distance = Math.sqrt(dx * dx + dz * dz);
+
+        if (distance < obstacle.radius + rocketRadius) {
+          const angle = Math.atan2(dz, dx);
+          rocket.position.x = obstacle.x + Math.cos(angle) * (obstacle.radius + rocketRadius);
+          rocket.position.z = obstacle.z + Math.sin(angle) * (obstacle.radius + rocketRadius);
+        }
+      } else if (obstacle.type === 'box') {
+        const halfWidth = obstacle.width / 2;
+        const halfDepth = obstacle.depth / 2;
+        
+        const closestX = Math.max(obstacle.x - halfWidth, Math.min(rocket.position.x, obstacle.x + halfWidth));
+        const closestZ = Math.max(obstacle.z - halfDepth, Math.min(rocket.position.z, obstacle.z + halfDepth));
+
+        const dx = rocket.position.x - closestX;
+        const dz = rocket.position.z - closestZ;
+        const distance = Math.sqrt(dx * dx + dz * dz);
+
+        if (distance < rocketRadius) {
+          const overlap = rocketRadius - distance;
+          const angle = Math.atan2(dz, dx);
+          
+          if (distance === 0) {
+             const distToMinX = rocket.position.x - (obstacle.x - halfWidth);
+             const distToMaxX = (obstacle.x + halfWidth) - rocket.position.x;
+             const distToMinZ = rocket.position.z - (obstacle.z - halfDepth);
+             const distToMaxZ = (obstacle.z + halfDepth) - rocket.position.z;
+             const minOverlap = Math.min(distToMinX, distToMaxX, distToMinZ, distToMaxZ);
+
+             if (minOverlap === distToMinX) rocket.position.x -= overlap;
+             else if (minOverlap === distToMaxX) rocket.position.x += overlap;
+             else if (minOverlap === distToMinZ) rocket.position.z -= overlap;
+             else rocket.position.z += overlap;
+          } else {
+             rocket.position.x += Math.cos(angle) * overlap;
+             rocket.position.z += Math.sin(angle) * overlap;
+          }
+        }
       }
     });
 

@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useShopStore } from '../../store/shopStore';
 import socketService from '../../services/socket';
+import { cemeteryObstacles } from '../entities/Cemetery';
 
 /**
  * Hook para controlar movimento do personagem
@@ -379,31 +380,72 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
     }
 
     // --- COLISÃO COM OBJETOS DO CENÁRIO ---
-    const obstacles = [
+    const staticObstacles = [
       // Árvores (posições de Ground.jsx)
-      { x: 10, z: -10, radius: 1.5 },
-      { x: -12, z: -8, radius: 1.2 },
-      { x: 15, z: 5, radius: 1.8 },
-      { x: -10, z: 8, radius: 1.3 },
-      { x: 8, z: 12, radius: 1.4 },
-      { x: -15, z: -15, radius: 1.6 },
+      { type: 'sphere', x: 10, z: -10, radius: 1.5 },
+      { type: 'sphere', x: -12, z: -8, radius: 1.2 },
+      { type: 'sphere', x: 15, z: 5, radius: 1.8 },
+      { type: 'sphere', x: -10, z: 8, radius: 1.3 },
+      { type: 'sphere', x: 8, z: 12, radius: 1.4 },
+      { type: 'sphere', x: -15, z: -15, radius: 1.6 },
       // Rochas (posições de Ground.jsx)
-      { x: -5, z: -12, radius: 1.2 },
-      { x: 12, z: -5, radius: 0.9 },
-      { x: -8, z: 10, radius: 1.1 },
-      { x: 5, z: 15, radius: 0.9 },
-      { x: 18, z: -12, radius: 1.2 },
+      { type: 'sphere', x: -5, z: -12, radius: 1.2 },
+      { type: 'sphere', x: 12, z: -5, radius: 0.9 },
+      { type: 'sphere', x: -8, z: 10, radius: 1.1 },
+      { type: 'sphere', x: 5, z: 15, radius: 0.9 },
+      { type: 'sphere', x: 18, z: -12, radius: 1.2 },
     ];
 
-    obstacles.forEach(obstacle => {
-      const dx = playerRef.current.position.x - obstacle.x;
-      const dz = playerRef.current.position.z - obstacle.z;
-      const distance = Math.sqrt(dx * dx + dz * dz);
+    const allObstacles = [...staticObstacles, ...cemeteryObstacles];
 
-      if (distance < obstacle.radius + playerRadius) {
-        const angle = Math.atan2(dz, dx);
-        playerRef.current.position.x = obstacle.x + Math.cos(angle) * (obstacle.radius + playerRadius);
-        playerRef.current.position.z = obstacle.z + Math.sin(angle) * (obstacle.radius + playerRadius);
+    allObstacles.forEach(obstacle => {
+      const playerX = playerRef.current.position.x;
+      const playerZ = playerRef.current.position.z;
+
+      if (obstacle.type === 'sphere') {
+        const dx = playerX - obstacle.x;
+        const dz = playerZ - obstacle.z;
+        const distance = Math.sqrt(dx * dx + dz * dz);
+
+        if (distance < obstacle.radius + playerRadius) {
+          const angle = Math.atan2(dz, dx);
+          playerRef.current.position.x = obstacle.x + Math.cos(angle) * (obstacle.radius + playerRadius);
+          playerRef.current.position.z = obstacle.z + Math.sin(angle) * (obstacle.radius + playerRadius);
+        }
+      } else if (obstacle.type === 'box') {
+        const halfWidth = obstacle.width / 2;
+        const halfDepth = obstacle.depth / 2;
+        
+        const closestX = Math.max(obstacle.x - halfWidth, Math.min(playerX, obstacle.x + halfWidth));
+        const closestZ = Math.max(obstacle.z - halfDepth, Math.min(playerZ, obstacle.z + halfDepth));
+
+        const dx = playerX - closestX;
+        const dz = playerZ - closestZ;
+        const distance = Math.sqrt(dx * dx + dz * dz);
+
+        if (distance < playerRadius) {
+          const overlap = playerRadius - distance;
+          const angle = Math.atan2(dz, dx);
+          
+          if (distance === 0) {
+             // Caso especial: jogador está exatamente no centro do obstáculo
+             // Empurra para o lado mais próximo
+             const distToMinX = playerX - (obstacle.x - halfWidth);
+             const distToMaxX = (obstacle.x + halfWidth) - playerX;
+             const distToMinZ = playerZ - (obstacle.z - halfDepth);
+             const distToMaxZ = (obstacle.z + halfDepth) - playerZ;
+             const minOverlap = Math.min(distToMinX, distToMaxX, distToMinZ, distToMaxZ);
+
+             if (minOverlap === distToMinX) playerRef.current.position.x -= overlap;
+             else if (minOverlap === distToMaxX) playerRef.current.position.x += overlap;
+             else if (minOverlap === distToMinZ) playerRef.current.position.z -= overlap;
+             else playerRef.current.position.z += overlap;
+
+          } else {
+             playerRef.current.position.x += Math.cos(angle) * overlap;
+             playerRef.current.position.z += Math.sin(angle) * overlap;
+          }
+        }
       }
     });
   });

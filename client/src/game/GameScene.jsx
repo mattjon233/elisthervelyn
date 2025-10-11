@@ -6,6 +6,7 @@ import Oracle from './entities/Oracle';
 import TiaRose from './entities/TiaRose';
 import Mansion from './entities/Mansion';
 import MapBoundary from './entities/MapBoundary';
+import Cemetery from './entities/Cemetery';
 import Player from './entities/Player';
 import Zombie from './entities/Zombie';
 import Ghost from './entities/Ghost';
@@ -71,7 +72,7 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
   const { potion, usePotion } = useShopStore();
 
   // Posição fixa do Tio Uncle
-  const tioUnclePosition = [45, 0, -45];
+  const tioUnclePosition = [45, 0, 20];
 
   // Listener para movimento de jogadores remotos
   useEffect(() => {
@@ -598,8 +599,14 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
       {/* Mansão no canto inferior esquerdo */}
       <Mansion />
 
+      {/* Cemitério no canto superior direito */}
+      <Cemetery />
+
       {/* Tio Uncle */}
-      <TioUncle playerPosition={localPlayerRef.current?.position ? [localPlayerRef.current.position.x, localPlayerRef.current.position.y, localPlayerRef.current.position.z] : [0, 0, 0]} />
+      <TioUncle 
+        position={tioUnclePosition} 
+        playerPosition={localPlayerRef.current?.position ? [localPlayerRef.current.position.x, localPlayerRef.current.position.y, localPlayerRef.current.position.z] : [0, 0, 0]} 
+      />
 
       {/* Oráculo */}
       <Oracle
