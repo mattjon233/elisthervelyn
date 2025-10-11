@@ -159,10 +159,13 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
       }
     };
 
-    const handleStoneDelivered = () => {
-      console.log('💎 Pedra preciosa entregue ao Oráculo!');
-      setHasStoneInInventory(false);
-      setShowOracleDeliveryPrompt(false);
+    const handleStoneDelivered = ({ playerId: delivererId }) => {
+      console.log(`💎 Pedra preciosa entregue ao Oráculo por ${delivererId}!`);
+      // Apenas o jogador que entregou deve limpar seu inventário
+      if (delivererId === playerId) {
+        setHasStoneInInventory(false);
+        setShowOracleDeliveryPrompt(false);
+      }
     };
 
     socketService.on('precious_stone_spawned', handleStoneSpawned);
