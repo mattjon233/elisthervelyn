@@ -13,11 +13,11 @@ import CooldownTimer from '../../components/CooldownTimer';
  */
 function Rocket({ position = [32, 0, 32] }) {
   const meshRef = useRef();
-  const lastHealTime = useRef(0);
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
 
   const players = useGameStore((state) => state.players);
   const playerId = useGameStore((state) => state.playerId);
+  const rocketState = useGameStore((state) => state.rocketState);
   const upgrades = useShopStore((state) => state.upgrades);
 
   // Parâmetros base do Rocket
@@ -44,10 +44,10 @@ function Rocket({ position = [32, 0, 32] }) {
     const rocket = meshRef.current;
     const currentTime = Date.now();
 
-    // --- Lógica de Cooldown ---
-    const elapsedSinceHeal = currentTime - lastHealTime.current;
+    // --- Lógica de Cooldown (sincronizado com servidor) ---
+    const elapsedSinceHeal = currentTime - rocketState.lastHealTime;
     const remainingCooldown = healInterval - elapsedSinceHeal;
-    
+
     if (remainingCooldown > 0) {
       setCooldownRemaining(remainingCooldown / 1000);
     } else {
@@ -90,9 +90,7 @@ function Rocket({ position = [32, 0, 32] }) {
     // para evitar que múltiplos clientes enviem os mesmos eventos de cura.
     const isHost = players.length > 0 && players[0].id === playerId;
 
-    if (isHost && currentTime - lastHealTime.current >= healInterval) {
-      lastHealTime.current = currentTime;
-
+    if (isHost && currentTime - rocketState.lastHealTime >= healInterval) {
       const rocketPos = new THREE.Vector3(meshRef.current.position.x, 0, meshRef.current.position.z);
 
       const playersToHeal = players.filter(player => {
@@ -102,12 +100,11 @@ function Rocket({ position = [32, 0, 32] }) {
       });
 
       if (playersToHeal.length > 0) {
-        playersToHeal.forEach(player => {
-          console.log(`🐕 Rocket (host) curando ${player.id} em +${healAmount} HP!`);
-          socketService.emit('player_heal_area', {
-            targetId: player.id,
-            amount: healAmount
-          });
+        // Enviar TODAS as curas em um único evento para o servidor processar atomicamente
+        console.log(`🐕 Rocket (host) curando ${playersToHeal.length} jogadoras em +${healAmount} HP cada!`);
+        socketService.emit('rocket_heal_area', {
+          targetIds: playersToHeal.map(p => p.id),
+          amount: healAmount
         });
         soundService.playHealSound();
       }

@@ -69,6 +69,10 @@ export class GameController {
         spawned: false,
         collected: false,
         position: null
+      },
+      // Estado do Rocket (cooldown sincronizado)
+      rocketState: {
+        lastHealTime: 0
       }
     };
 
@@ -124,14 +128,18 @@ export class GameController {
 
     // Adicionar ou atualizar jogadora
     const playerIndex = room.players.findIndex(p => p.id === socket.id);
+    const characterStats = this.gameService.getCharacterStats(character);
     const player = {
       id: socket.id,
       character,
       ready: true,
-      stats: this.gameService.getCharacterStats(character),
+      stats: {
+        ...characterStats,
+        id: character.toLowerCase() // Adicionar ID para sincronização
+      },
       position: { x: 30 + Math.random() * 4, y: 0.5, z: 30 + Math.random() * 4 }, // Spawn perto do Oracle
-      health: this.gameService.getCharacterStats(character).stats.vida_maxima,
-      maxHealth: this.gameService.getCharacterStats(character).stats.vida_maxima,
+      health: characterStats.stats.vida_maxima,
+      maxHealth: characterStats.stats.vida_maxima,
       // Sistema de poções
       hasPotion: false,
       hasReceivedFreePotion: false,
@@ -262,7 +270,7 @@ export class GameController {
   /**
    * Ataque básico e habilidades
    */
-  handlePlayerAttack(socket, { targetIds, damage = null }) {
+  handlePlayerAttack(socket, { targetIds, damage = null, damageMultiplier = 1.0, instakillChance = 0 }) {
     const roomId = this.playerRooms.get(socket.id);
     const room = this.rooms.get(roomId);
     if (!room || !room.gameStarted) return;
@@ -274,8 +282,15 @@ export class GameController {
       const target = room.enemies.find(e => e.id === targetId);
       const wasAlive = target && target.health > 0;
 
-      // Se o cliente enviou um dano específico (habilidade), usa ele; senão, usa o dano padrão
-      this.gameService.applyAttackDamage(player, room.enemies, targetId, damage);
+      // Verificar instakill primeiro
+      const instakillTriggered = instakillChance > 0 && Math.random() < instakillChance;
+      if (instakillTriggered && target && target.health > 0) {
+        console.log(`💀 INSTAKILL! ${socket.id} matou ${targetId} instantaneamente (${instakillChance * 100}% chance)`);
+        target.health = 0;
+      } else {
+        // Se não houve instakill, aplica dano normal com multiplicador
+        this.gameService.applyAttackDamage(player, room.enemies, targetId, damage, damageMultiplier);
+      }
 
       // Se o inimigo morreu agora, processar morte (XP + progresso de missão)
       const isDead = target && target.health <= 0;
@@ -386,7 +401,51 @@ export class GameController {
   }
 
   /**
-   * Cura em área (habilidade Esther)
+   * Cura em área do Rocket (processa múltiplas jogadoras atomicamente)
+   */
+  handleRocketHealArea(socket, { targetIds, amount }) {
+    const roomId = this.playerRooms.get(socket.id);
+    const room = this.rooms.get(roomId);
+    if (!room || !room.gameStarted) return;
+
+    const currentTime = Date.now();
+    const timeSinceLastHeal = currentTime - room.rocketState.lastHealTime;
+
+    console.log(`🐕 SERVER: handleRocketHealArea chamado por ${socket.id} - ${timeSinceLastHeal}ms desde última cura`);
+
+    // PROTEÇÃO: Ignorar se foi chamado há menos de 1 segundo (possível duplicata)
+    if (timeSinceLastHeal < 1000) {
+      console.log(`⚠️ SERVER: Ignorando cura duplicada (muito rápido: ${timeSinceLastHeal}ms)`);
+      return;
+    }
+
+    console.log(`🐕 SERVER: Processando cura de ${targetIds.length} jogadoras (${amount} HP cada)`);
+
+    // Atualizar timestamp PRIMEIRO para evitar processamento duplicado
+    room.rocketState.lastHealTime = currentTime;
+
+    // Aplicar cura em todas as jogadoras
+    targetIds.forEach(targetId => {
+      const targetPlayer = room.players.find(p => p.id === targetId);
+      if (!targetPlayer) return;
+
+      const oldHealth = targetPlayer.health;
+      targetPlayer.health = Math.min(targetPlayer.maxHealth, targetPlayer.health + amount);
+      const actualHeal = targetPlayer.health - oldHealth;
+
+      console.log(`🐕 SERVER: Rocket curou ${targetId} em ${actualHeal} HP (${oldHealth} -> ${targetPlayer.health})`);
+    });
+
+    // Broadcast do novo estado para todos (incluindo timestamp do Rocket)
+    this.io.to(roomId).emit('game_state_updated', {
+      enemies: room.enemies,
+      players: room.players,
+      rocketState: room.rocketState
+    });
+  }
+
+  /**
+   * Cura em área (habilidade Esther - mantido para compatibilidade)
    */
   handlePlayerHealArea(socket, { targetId, amount }) {
     const roomId = this.playerRooms.get(socket.id);
@@ -401,10 +460,13 @@ export class GameController {
     targetPlayer.health = Math.min(targetPlayer.maxHealth, targetPlayer.health + amount);
     const actualHeal = targetPlayer.health - oldHealth;
 
-    console.log(`SERVER: ${socket.id} curou ${targetId} em ${actualHeal} HP (${oldHealth} -> ${targetPlayer.health})`);
+    console.log(`SERVER: Habilidade curou ${targetId} em ${actualHeal} HP (${oldHealth} -> ${targetPlayer.health})`);
 
     // Broadcast do novo estado para todos
-    this.io.to(roomId).emit('game_state_updated', { enemies: room.enemies, players: room.players });
+    this.io.to(roomId).emit('game_state_updated', {
+      enemies: room.enemies,
+      players: room.players
+    });
   }
 
   /**
@@ -717,6 +779,50 @@ export class GameController {
       missionProgress: room.missionProgress,
       teamGold: room.teamGold
     });
+  }
+
+  /**
+   * Skill desbloqueada - sincronizar com servidor
+   */
+  handleSkillUnlocked(socket, { skillName, bonus }) {
+    const roomId = this.playerRooms.get(socket.id);
+    const room = this.rooms.get(roomId);
+    if (!room || !room.gameStarted) return;
+
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player) return;
+
+    console.log(`📡 SERVER: ${socket.id} desbloqueou skill ${skillName}`);
+
+    // Aplicar bônus de HP
+    if (skillName === 'healthIncrease') {
+      player.maxHealth += bonus;
+      player.health = Math.min(player.health + bonus, player.maxHealth); // Cura também
+      console.log(`❤️ SERVER: ${socket.id} HP aumentado: ${player.health}/${player.maxHealth}`);
+    }
+
+    // Broadcast atualização
+    this.io.to(roomId).emit('game_state_updated', { enemies: room.enemies, players: room.players });
+  }
+
+  /**
+   * Ativar invulnerabilidade (Skill T)
+   */
+  handleActivateInvulnerability(socket, { duration }) {
+    const roomId = this.playerRooms.get(socket.id);
+    const room = this.rooms.get(roomId);
+    if (!room || !room.gameStarted) return;
+
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player) return;
+
+    const invulnerableUntil = Date.now() + duration;
+    player.invulnerableUntil = invulnerableUntil;
+
+    console.log(`🛡️ SERVER: ${socket.id} ativou invulnerabilidade por ${duration}ms (até ${invulnerableUntil})`);
+
+    // Broadcast atualização
+    this.io.to(roomId).emit('game_state_updated', { enemies: room.enemies, players: room.players });
   }
 
   /**

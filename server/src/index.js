@@ -47,6 +47,7 @@ io.on('connection', (socket) => {
   socket.on('player_special', (data) => gameController.handlePlayerSpecial(socket, data));
   socket.on('player_heal', (data) => gameController.handlePlayerHeal(socket, data));
   socket.on('player_heal_area', (data) => gameController.handlePlayerHealArea(socket, data));
+  socket.on('rocket_heal_area', (data) => gameController.handleRocketHealArea(socket, data));
   socket.on('request_respawn', () => gameController.handlePlayerRespawn(socket));
 
   // Missões colaborativas
@@ -60,6 +61,10 @@ io.on('connection', (socket) => {
   // Pedra Preciosa
   socket.on('collect_stone', () => gameController.handleCollectStone(socket));
   socket.on('deliver_stone', () => gameController.handleDeliverStone(socket));
+
+  // Skills
+  socket.on('skill_unlocked', (data) => gameController.handleSkillUnlocked(socket, data));
+  socket.on('activate_invulnerability', (data) => gameController.handleActivateInvulnerability(socket, data));
 
   // DEBUG: Matar todos os monstros (tecla B)
   socket.on('debug_kill_all', () => gameController.handleDebugKillAll(socket));

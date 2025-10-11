@@ -1,11 +1,12 @@
 import './SkillTreeUI.css';
 import { useLevelStore } from '../store/levelStore';
+import socketService from '../services/socket';
 
 function SkillTreeUI({ onClose }) {
   const { skills, skillPoints, unlockSkill } = useLevelStore();
 
   const handleUnlock = (skillName) => {
-    const success = unlockSkill(skillName);
+    const success = unlockSkill(skillName, socketService);
     if (!success) {
       // Pode adicionar um feedback visual de erro aqui
     }

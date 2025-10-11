@@ -30,6 +30,11 @@ export const useGameStore = create((set, get) => ({
   // NPCs passivos (não atacam nem tomam dano)
   npcs: [],
 
+  // Estado do Rocket (sincronizado com servidor)
+  rocketState: {
+    lastHealTime: 0
+  },
+
   // Boss
   bossActive: false,
   bossData: null,
@@ -110,6 +115,8 @@ export const useGameStore = create((set, get) => ({
   setEnemies: (enemies) => set({ enemies }),
 
   setNpcs: (npcs) => set({ npcs }),
+
+  setRocketState: (rocketState) => set({ rocketState }),
 
   addEnemy: (enemy) => set((state) => ({
     enemies: [...state.enemies, enemy]

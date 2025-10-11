@@ -118,7 +118,7 @@ export class GameService {
   /**
    * Processa o dano de um ataque básico ou habilidade
    */
-  applyAttackDamage(attacker, enemies, targetId, customDamage = null) {
+  applyAttackDamage(attacker, enemies, targetId, customDamage = null, damageMultiplier = 1.0) {
     const target = enemies.find(e => e.id === targetId);
     if (!target || target.health <= 0) return;
 
@@ -132,11 +132,16 @@ export class GameService {
     const AUTO_ATTACK_DAMAGE = 10;
 
     // Se o cliente enviou um dano customizado (habilidade), usa ele; senão, usa 10 de dano
-    const damage = customDamage !== null ? customDamage : AUTO_ATTACK_DAMAGE;
-    this.applyDamage(target, damage);
+    let baseDamage = customDamage !== null ? customDamage : AUTO_ATTACK_DAMAGE;
+
+    // Aplica multiplicador de dano (skill de +50% dano)
+    const finalDamage = Math.round(baseDamage * damageMultiplier);
+
+    this.applyDamage(target, finalDamage);
 
     const damageType = customDamage !== null ? '(habilidade)' : '(básico)';
-    console.log(`SERVER: Jogador ${attacker.id} (${attacker.character}) causou ${damage} ${damageType} de dano em ${target.id}. Vida restante: ${target.health}`);
+    const multiplierText = damageMultiplier !== 1.0 ? ` x${damageMultiplier}` : '';
+    console.log(`SERVER: Jogador ${attacker.id} (${attacker.character}) causou ${finalDamage}${multiplierText} ${damageType} de dano em ${target.id}. Vida restante: ${target.health}`);
   }
 
   /**

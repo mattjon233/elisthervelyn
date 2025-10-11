@@ -27,6 +27,9 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
   const localPlayerRef = useRef();
   const directionalLightRef = useRef();
 
+  // Bonuses das skills
+  const { bonuses } = useLevelStore();
+
   // Animação do sol
   useFrame(({ clock }) => {
     if (directionalLightRef.current) {
@@ -85,9 +88,14 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
 
   // Listener para atualizações de estado do servidor
   useEffect(() => {
-    const handleStateUpdate = ({ enemies: serverEnemies, players: serverPlayers }) => {
+    const handleStateUpdate = ({ enemies: serverEnemies, players: serverPlayers, rocketState }) => {
       useGameStore.getState().setEnemies(serverEnemies);
       useGameStore.getState().setPlayers(serverPlayers);
+
+      // Atualizar estado do Rocket se presente
+      if (rocketState) {
+        useGameStore.getState().setRocketState(rocketState);
+      }
     };
 
     socketService.on('game_state_updated', handleStateUpdate);
@@ -334,8 +342,8 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
 
       if (enemiesInRange.length > 0) {
         const enemyIds = enemiesInRange.map(e => e.id);
-        console.log(`CLIENT: Enviando ataque para inimigos:`, enemyIds);
-        socketService.sendAttack(enemyIds);
+        console.log(`CLIENT: Enviando ataque para inimigos:`, enemyIds, `[Dano x${bonuses.damageMultiplier}, Instakill ${bonuses.instakillChance * 100}%]`);
+        socketService.sendAttack(enemyIds, null, bonuses.damageMultiplier, bonuses.instakillChance);
       }
     }
 
@@ -361,7 +369,7 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
             if (enemiesInRange.length > 0) {
               const enemyIds = enemiesInRange.map(e => e.id);
               enemyIds.forEach(id => hitSet.add(id)); // Marcar como atingido
-              socketService.sendAttack(enemyIds, ability.damage);
+              socketService.sendAttack(enemyIds, ability.damage, bonuses.damageMultiplier, bonuses.instakillChance);
             }
           }
           break;
@@ -378,7 +386,7 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
             if (enemiesInRange.length > 0) {
               const enemyIds = enemiesInRange.map(e => e.id);
               enemyIds.forEach(id => hitSet.add(id));
-              socketService.sendAttack(enemyIds, ability.damage);
+              socketService.sendAttack(enemyIds, ability.damage, bonuses.damageMultiplier, bonuses.instakillChance);
             }
 
             // Aplica cura em área para todas as jogadoras (apenas uma vez por habilidade)
@@ -409,6 +417,7 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
     });
 
     // Lógica de colisão do jogador local com inimigos
+    // NÃO empurrar se estiver atacando (para não atrapalhar combate)
     enemies.forEach((enemy) => {
       if (enemy.health <= 0) return; // Ignorar inimigos mortos
 
@@ -418,9 +427,10 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
 
       const collisionRadius = 0.8; // Raio de colisão mais ajustado
 
-      if (distance < collisionRadius && distance > 0.01) { // Evita divisão por zero
+      // Só empurra se NÃO estiver atacando
+      if (distance < collisionRadius && distance > 0.01 && !isAttacking) {
         // Calcula força de repulsão baseada na distância (quanto mais perto, mais forte)
-        const pushStrength = (collisionRadius - distance) / collisionRadius * 0.15;
+        const pushStrength = (collisionRadius - distance) / collisionRadius * 0.08; // Reduzido de 0.15 para 0.08
 
         // Normaliza o vetor de direção
         const pushX = (playerPos.x - enemy.position[0]) / distance * pushStrength;
@@ -444,6 +454,39 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
       const pushZ = (playerPos.z - tioUnclePosition[2]) / tioUncleDistance * pushStrength;
       localPlayerRef.current.position.x += pushX;
       localPlayerRef.current.position.z += pushZ;
+    }
+
+    // Colisão entre jogadores (impedir overlap)
+    players.forEach((player) => {
+      if (player.id === playerId || !player.position) return; // Ignorar si mesmo
+
+      const dx = player.position.x - playerPos.x;
+      const dz = player.position.z - playerPos.z;
+      const distance = Math.sqrt(dx * dx + dz * dz);
+      const playerCollisionRadius = 0.6;
+
+      if (distance < playerCollisionRadius && distance > 0.01) {
+        const pushStrength = (playerCollisionRadius - distance) / playerCollisionRadius * 0.1;
+        const pushX = (playerPos.x - player.position.x) / distance * pushStrength;
+        const pushZ = (playerPos.z - player.position.z) / distance * pushStrength;
+        localPlayerRef.current.position.x += pushX;
+        localPlayerRef.current.position.z += pushZ;
+      }
+    });
+
+    // Limites do mapa (boundary checking)
+    const mapBoundary = 50; // Mapa é -50 a 50 em X e Z
+    if (localPlayerRef.current.position.x > mapBoundary) {
+      localPlayerRef.current.position.x = mapBoundary;
+    }
+    if (localPlayerRef.current.position.x < -mapBoundary) {
+      localPlayerRef.current.position.x = -mapBoundary;
+    }
+    if (localPlayerRef.current.position.z > mapBoundary) {
+      localPlayerRef.current.position.z = mapBoundary;
+    }
+    if (localPlayerRef.current.position.z < -mapBoundary) {
+      localPlayerRef.current.position.z = -mapBoundary;
     }
 
     // Lógica de proximidade com pedra preciosa
@@ -599,7 +642,7 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
         onAbilityHitTarget={(ability, enemyId) => {
           // Dano de alvo único (flecha) é enviado para o servidor com o dano da habilidade
           console.log(`🎯 Habilidade ${ability.name} atingiu ${enemyId} causando ${ability.damage} de dano`);
-          socketService.sendAttack([enemyId], ability.damage);
+          socketService.sendAttack([enemyId], ability.damage, bonuses.damageMultiplier, bonuses.instakillChance);
         }}
         onAbilityImpact={(ability, impactPosition) => {
           // Dano em área (meteoro) é calculado e enviado para o servidor com o dano da habilidade
@@ -612,20 +655,27 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
           if (enemiesInRange.length > 0) {
             const enemyIds = enemiesInRange.map(e => e.id);
             console.log(`💥 Habilidade ${ability.name} atingiu ${enemyIds.length} inimigos causando ${ability.damage} de dano cada`);
-            socketService.sendAttack(enemyIds, ability.damage);
+            socketService.sendAttack(enemyIds, ability.damage, bonuses.damageMultiplier, bonuses.instakillChance);
           }
         }}
       />
 
       {/* Jogadores Remotos */}
-      {players.filter(p => p.id !== playerId).map((player) => (
-        <Player
-          key={player.id}
-          character={player.stats} // Os stats do personagem estão aqui
-          position={[player.position?.x || 0, player.position?.y || 0.5, player.position?.z || 0]}
-          isLocalPlayer={false}
-        />
-      ))}
+      {players.filter(p => p.id !== playerId).map((player) => {
+        // DEBUG: Ver o que tem no player remoto
+        if (!player.stats && !player.character) {
+          console.warn('⚠️ Jogador remoto sem character:', player.id, player);
+        }
+
+        return (
+          <Player
+            key={player.id}
+            character={player.stats || player.character} // Tenta stats ou character
+            position={[player.position?.x || 0, player.position?.y || 0.5, player.position?.z || 0]}
+            isLocalPlayer={false}
+          />
+        );
+      })}
 
       {/* Inimigos */}
       {enemies.map((enemy) => {

@@ -66,7 +66,7 @@ export const useLevelStore = create((set, get) => ({
   },
 
   // Ativar skill (retorna true se sucesso)
-  unlockSkill: (skillName) => {
+  unlockSkill: (skillName, socketService = null) => {
     const state = get();
 
     // Verificar se tem skill points
@@ -132,6 +132,13 @@ export const useLevelStore = create((set, get) => ({
     });
 
     console.log(`✅ Skill desbloqueada: ${skillName}`);
+
+    // Notificar servidor se for skill de HP
+    if (skillName === 'healthIncrease' && socketService) {
+      console.log('📡 Enviando skill HP para servidor...');
+      socketService.emit('skill_unlocked', { skillName: 'healthIncrease', bonus: 50 });
+    }
+
     return true;
   },
 

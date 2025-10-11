@@ -24,6 +24,7 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
   const [showAttackEffect, setShowAttackEffect] = useState(false);
   const attackAnimProgress = useRef(0);
   const walkCycle = useRef(0);
+  const previousPosition = useRef({ x: position[0], y: position[1], z: position[2] }); // Para detectar movimento em jogadores remotos
 
   // Cores por personagem
   const colors = {
@@ -32,7 +33,16 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
     evelyn: '#A8D8EA'
   };
 
-  const color = colors[character?.id] || '#FFB6D9';
+  // DEBUG: Log para jogadores remotos
+  useEffect(() => {
+    if (!isLocalPlayer && character) {
+      console.log('🔧 DEBUG Remote Player:', { character, hasId: !!character?.id, hasNome: !!character?.nome });
+    }
+  }, [character, isLocalPlayer]);
+
+  // Tenta pegar o ID do character (pode estar em .id ou .nome)
+  const charId = character?.id || character?.nome?.toLowerCase() || 'elissa';
+  const color = colors[charId] || '#FFB6D9';
 
   // Pega o estado do jogador da store para invulnerabilidade
   const { players, playerId } = useGameStore();
@@ -102,9 +112,29 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
       }
     }
 
-    // Animação de caminhada (perninhas)
-    if (isLocalPlayer && controls && leftLegRef.current && rightLegRef.current) {
-      const isMoving = controls.keys && (controls.keys.w || controls.keys.a || controls.keys.s || controls.keys.d);
+    // Animação de caminhada (perninhas) - tanto para local quanto para remoto
+    if (leftLegRef.current && rightLegRef.current && meshRef.current) {
+      let isMoving = false;
+
+      if (isLocalPlayer && controls) {
+        // Jogador local: detecta através dos controles
+        isMoving = controls.keys && (controls.keys.w || controls.keys.a || controls.keys.s || controls.keys.d);
+      } else {
+        // Jogador remoto: detecta através da mudança de posição
+        const currentPos = meshRef.current.position;
+        const deltaX = Math.abs(currentPos.x - previousPosition.current.x);
+        const deltaZ = Math.abs(currentPos.z - previousPosition.current.z);
+        const movementThreshold = 0.01; // Threshold para considerar movimento
+
+        isMoving = (deltaX > movementThreshold || deltaZ > movementThreshold);
+
+        // Atualiza posição anterior
+        previousPosition.current = {
+          x: currentPos.x,
+          y: currentPos.y,
+          z: currentPos.z
+        };
+      }
 
       if (isMoving) {
         walkCycle.current += delta * 8; // Velocidade da caminhada
@@ -116,15 +146,13 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
         rightLegRef.current.rotation.x = -legSwing; // Invertido
 
         // Pequeno movimento vertical (bounce)
-        if (meshRef.current) {
-          const bounce = Math.abs(Math.sin(walkCycle.current * 2)) * 0.05;
-          meshRef.current.position.y = 0.5 + bounce;
-        }
+        const bounce = Math.abs(Math.sin(walkCycle.current * 2)) * 0.05;
+        meshRef.current.position.y = 0.5 + bounce;
       } else {
         // Quando parado, volta as pernas para posição neutra suavemente
-        if (leftLegRef.current) leftLegRef.current.rotation.x *= 0.85;
-        if (rightLegRef.current) rightLegRef.current.rotation.x *= 0.85;
-        if (meshRef.current && meshRef.current.position.y > 0.5) {
+        leftLegRef.current.rotation.x *= 0.85;
+        rightLegRef.current.rotation.x *= 0.85;
+        if (meshRef.current.position.y > 0.5) {
           meshRef.current.position.y = THREE.MathUtils.lerp(meshRef.current.position.y, 0.5, 0.1);
         }
       }
@@ -214,7 +242,7 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
   }, [activeAbilities]);
 
   // Configurações por personagem
-  const heightScale = character?.id === 'esther' ? 0.9 : 1.0; // Esther um pouco mais baixa
+  const heightScale = charId === 'esther' ? 0.9 : 1.0; // Esther um pouco mais baixa
   const skinColor = '#ffd5bd';
 
   // Cores de cabelo
@@ -223,7 +251,7 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
     elissa: '#3E2723',  // Castanho escuro
     evelyn: '#8B6F47'   // Castanho claro
   };
-  const hairColor = hairColors[character?.id] || '#8B6F47';
+  const hairColor = hairColors[charId] || '#8B6F47';
 
   // Não renderizar se estiver morto
   if (isDead) {
@@ -322,7 +350,7 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
       </mesh>
 
       {/* CABELO - Específico por personagem */}
-      {character?.id === 'esther' && (
+      {charId === 'esther' && (
         <>
           {/* Cabelo castanho claro liso médio */}
           <mesh castShadow position={[0, 1.02 * heightScale, 0]}>
@@ -342,7 +370,7 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
         </>
       )}
 
-      {character?.id === 'elissa' && (
+      {charId === 'elissa' && (
         <>
           {/* Cabelo castanho escuro longo ondulado */}
           <mesh castShadow position={[0, 1.02 * heightScale, 0]}>
@@ -370,7 +398,7 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
         </>
       )}
 
-      {character?.id === 'evelyn' && (
+      {charId === 'evelyn' && (
         <>
           {/* Cabelo castanho claro longo liso */}
           <mesh castShadow position={[0, 1.02 * heightScale, 0]}>

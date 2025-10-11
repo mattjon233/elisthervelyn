@@ -132,8 +132,8 @@ class SocketService {
   /**
    * Enviar ataque
    */
-  sendAttack(targetIds, damage = null) {
-    this.emit('player_attack', { targetIds, damage });
+  sendAttack(targetIds, damage = null, damageMultiplier = 1.0, instakillChance = 0) {
+    this.emit('player_attack', { targetIds, damage, damageMultiplier, instakillChance });
   }
 
   /**
