@@ -4,7 +4,7 @@ import './VirtualJoystick.css';
 /**
  * Joystick Virtual para controle touch em dispositivos móveis
  */
-function VirtualJoystick({ onMove, onAttack, onSpecial, onInteract, onUsePotion, onInvulnerability, hasInvulnerability = false }) {
+function VirtualJoystick({ onMove, onAttack, onSpecial, onInteract, onUsePotion, onInvulnerability, hasInvulnerability = false, abilityState = null }) {
   const joystickRef = useRef(null);
   const stickRef = useRef(null);
   const [active, setActive] = useState(false);
@@ -17,7 +17,8 @@ function VirtualJoystick({ onMove, onAttack, onSpecial, onInteract, onUsePotion,
     if (!joystick) return;
 
     let touchId = null;
-    let startPos = { x: 0, y: 0 };
+    let centerX = 0;
+    let centerY = 0;
 
     const handleTouchStart = (e) => {
       e.preventDefault();
@@ -25,10 +26,8 @@ function VirtualJoystick({ onMove, onAttack, onSpecial, onInteract, onUsePotion,
       touchId = touch.identifier;
 
       const rect = joystick.getBoundingClientRect();
-      startPos = {
-        x: rect.left + rect.width / 2,
-        y: rect.top + rect.height / 2
-      };
+      centerX = rect.left + rect.width / 2;
+      centerY = rect.top + rect.height / 2;
 
       setActive(true);
     };
@@ -41,22 +40,25 @@ function VirtualJoystick({ onMove, onAttack, onSpecial, onInteract, onUsePotion,
       if (!touch) return;
 
       // Calcular deslocamento do centro
-      const deltaX = touch.clientX - startPos.x;
-      const deltaY = touch.clientY - startPos.y;
+      let deltaX = touch.clientX - centerX;
+      let deltaY = touch.clientY - centerY;
 
       // Limitar ao raio máximo
       const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-      const limitedDistance = Math.min(distance, maxDistance);
-      const angle = Math.atan2(deltaY, deltaX);
+      if (distance > maxDistance) {
+        const angle = Math.atan2(deltaY, deltaX);
+        deltaX = Math.cos(angle) * maxDistance;
+        deltaY = Math.sin(angle) * maxDistance;
+      }
 
-      const x = Math.cos(angle) * limitedDistance;
-      const y = Math.sin(angle) * limitedDistance;
-
-      setPosition({ x, y });
+      // Atualizar posição visual do stick
+      setPosition({ x: deltaX, y: deltaY });
 
       // Normalizar para valores -1 a 1
-      const normalizedX = x / maxDistance;
-      const normalizedY = y / maxDistance;
+      // X: -1 = esquerda, +1 = direita
+      // Y: -1 = cima, +1 = baixo (normalizado corretamente)
+      const normalizedX = deltaX / maxDistance;
+      const normalizedY = deltaY / maxDistance;
 
       // Callback com direção
       if (onMove) {
@@ -75,10 +77,10 @@ function VirtualJoystick({ onMove, onAttack, onSpecial, onInteract, onUsePotion,
       }
     };
 
-    joystick.addEventListener('touchstart', handleTouchStart);
-    joystick.addEventListener('touchmove', handleTouchMove);
-    joystick.addEventListener('touchend', handleTouchEnd);
-    joystick.addEventListener('touchcancel', handleTouchEnd);
+    joystick.addEventListener('touchstart', handleTouchStart, { passive: false });
+    joystick.addEventListener('touchmove', handleTouchMove, { passive: false });
+    joystick.addEventListener('touchend', handleTouchEnd, { passive: false });
+    joystick.addEventListener('touchcancel', handleTouchEnd, { passive: false });
 
     return () => {
       joystick.removeEventListener('touchstart', handleTouchStart);
@@ -126,7 +128,7 @@ function VirtualJoystick({ onMove, onAttack, onSpecial, onInteract, onUsePotion,
 
         {/* Botão de Habilidade Especial */}
         <button
-          className="action-btn special-btn"
+          className={`action-btn special-btn ${abilityState && !abilityState.canUse ? 'on-cooldown' : ''}`}
           onTouchStart={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -137,7 +139,16 @@ function VirtualJoystick({ onMove, onAttack, onSpecial, onInteract, onUsePotion,
             e.stopPropagation();
           }}
         >
-          ✨
+          <div className="btn-icon">✨</div>
+          <div className="btn-label">Q</div>
+          {abilityState && !abilityState.canUse && (
+            <div
+              className="cooldown-overlay"
+              style={{
+                height: `${(1 - (abilityState.cooldownProgress || 0)) * 100}%`
+              }}
+            />
+          )}
         </button>
       </div>
 

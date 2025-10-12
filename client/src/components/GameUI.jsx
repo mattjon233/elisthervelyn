@@ -172,6 +172,7 @@ function GameUI({ character, killCount = 0, abilityState, invulnerabilityState, 
           onUsePotion={handleUsePotion}
           onInvulnerability={handleInvulnerability}
           hasInvulnerability={bonuses.hasInvulnerability}
+          abilityState={abilityState ? Object.values(abilityState)[0] : null}
         />
       </div>
 

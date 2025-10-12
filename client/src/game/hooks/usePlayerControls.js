@@ -224,11 +224,15 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
     let dirX = 0;
     let dirZ = 0;
 
-    // Priorizar input do joystick se existir, senão usar teclado
-    if (joystickInput.current.x !== 0 || joystickInput.current.y !== 0) {
-      // Joystick: x é esquerda/direita, y é frente/trás (invertido)
+    // Priorizar input do joystick se existir (com threshold para evitar drift)
+    const hasJoystickInput = Math.abs(joystickInput.current.x) > 0.1 || Math.abs(joystickInput.current.y) > 0.1;
+
+    if (hasJoystickInput) {
+      // Joystick: usar diretamente os valores normalizados
+      // x: -1 (esquerda) a +1 (direita)
+      // y: -1 (cima/frente) a +1 (baixo/trás)
       dirX = joystickInput.current.x;
-      dirZ = -joystickInput.current.y; // Inverter Y do joystick
+      dirZ = joystickInput.current.y; // Y positivo = para trás (já está correto!)
     } else {
       // Teclado
       if (keys.w) dirZ -= 1; // Para frente
