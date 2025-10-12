@@ -39,7 +39,9 @@ function GameUI({ character, killCount = 0, abilityState, invulnerabilityState, 
   }, [health, prevHealth, triggerDamageEffect, triggerHealEffect]);
 
   const handleJoystickMove = ({ x, y }) => {
-    // Movimento será tratado pelo hook usePlayerControls
+    // Disparar evento customizado para o hook usePlayerControls capturar
+    const event = new CustomEvent('mobileJoystick', { detail: { x, y } });
+    window.dispatchEvent(event);
   };
 
   const handleAttack = () => {

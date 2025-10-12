@@ -30,6 +30,7 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
   const moveDirection = useRef(new THREE.Vector3());
   const smoothVelocity = useRef(new THREE.Vector3());
   const keysPressed = useRef({}); // Para registrar estado de teclas de debug
+  const joystickInput = useRef({ x: 0, y: 0 }); // Input do joystick virtual
 
   // Sistema de ataque com cooldown
   const [isAttacking, setIsAttacking] = useState(false);
@@ -61,6 +62,13 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
           n: prev.n || key === 'n',
         }));
       }
+    };
+
+    // Handler para joystick virtual (movimento)
+    const handleJoystickMove = (e) => {
+      if (isDead) return;
+      const { x, y } = e.detail;
+      joystickInput.current = { x, y };
     };
 
     // Handler para eventos mobile customizados
@@ -157,6 +165,7 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
     window.addEventListener('mousedown', handleMouseDown);
     window.addEventListener('mouseup', handleMouseUp);
     window.addEventListener('mobileInput', handleMobileInput); // Listener para controles mobile
+    window.addEventListener('mobileJoystick', handleJoystickMove); // Listener para joystick
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
@@ -166,6 +175,7 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
       window.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('mouseup', handleMouseUp);
       window.removeEventListener('mobileInput', handleMobileInput);
+      window.removeEventListener('mobileJoystick', handleJoystickMove);
     };
   }, [isDead]);
 
@@ -214,10 +224,18 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
     let dirX = 0;
     let dirZ = 0;
 
-    if (keys.w) dirZ -= 1; // Para frente
-    if (keys.s) dirZ += 1; // Para trás
-    if (keys.a) dirX -= 1; // Para esquerda
-    if (keys.d) dirX += 1; // Para direita
+    // Priorizar input do joystick se existir, senão usar teclado
+    if (joystickInput.current.x !== 0 || joystickInput.current.y !== 0) {
+      // Joystick: x é esquerda/direita, y é frente/trás (invertido)
+      dirX = joystickInput.current.x;
+      dirZ = -joystickInput.current.y; // Inverter Y do joystick
+    } else {
+      // Teclado
+      if (keys.w) dirZ -= 1; // Para frente
+      if (keys.s) dirZ += 1; // Para trás
+      if (keys.a) dirX -= 1; // Para esquerda
+      if (keys.d) dirX += 1; // Para direita
+    }
 
     // Aplicar rotação da câmera ao movimento
     if (dirX !== 0 || dirZ !== 0) {
