@@ -15,7 +15,6 @@ class SocketService {
    */
   connect() {
     if (this.socket?.connected) {
-      console.log('[Socket] Já conectado');
       return this.socket;
     }
 
@@ -28,18 +27,15 @@ class SocketService {
 
     this.socket.on('connect', () => {
       this.connected = true;
-      console.log('[Socket] Conectado:', this.socket.id);
       // Atualiza o ID do jogador na store global
       useGameStore.getState().setPlayerId(this.socket.id);
     });
 
     this.socket.on('disconnect', () => {
       this.connected = false;
-      console.log('[Socket] Desconectado');
     });
 
     this.socket.on('error', (error) => {
-      console.error('[Socket] Erro:', error);
     });
 
     return this.socket;
@@ -61,7 +57,6 @@ class SocketService {
    */
   emit(event, data) {
     if (!this.socket) {
-      console.warn('[Socket] Socket não conectado');
       return;
     }
     this.socket.emit(event, data);
@@ -72,7 +67,6 @@ class SocketService {
    */
   on(event, callback) {
     if (!this.socket) {
-      console.warn('[Socket] Socket não conectado');
       return;
     }
     this.socket.on(event, callback);

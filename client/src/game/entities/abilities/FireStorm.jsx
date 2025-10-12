@@ -11,8 +11,6 @@ function FireStorm({ ability }) {
   const [intensity, setIntensity] = useState(1);
   const timeRef = useRef(0);
 
-  console.log('🔥 FIRE STORM ATIVADO!');
-
   useEffect(() => {
     // Pulsa a intensidade do fogo
     const pulseInterval = setInterval(() => {

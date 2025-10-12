@@ -10,8 +10,6 @@ function LightBurst({ ability }) {
   const [scale, setScale] = useState(0.1);
   const [opacity, setOpacity] = useState(1);
 
-  console.log('✨💚 LIGHT BURST ATIVADO - Causando 25 de dano e curando 25 HP!');
-
   useEffect(() => {
     // Expande e depois desaparece
     const expandInterval = setInterval(() => {

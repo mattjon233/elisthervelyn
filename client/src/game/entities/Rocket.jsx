@@ -214,7 +214,6 @@ const Rocket = forwardRef(({ position = [32, 0, 32] }, ref) => {
 
       if (playersToHeal.length > 0) {
         // Enviar TODAS as curas em um único evento para o servidor processar atomicamente
-        console.log(`🐕 Rocket (host) curando ${playersToHeal.length} jogadoras em +${healAmount} HP cada!`);
         socketService.emit('rocket_heal_area', {
           targetIds: playersToHeal.map(p => p.id),
           amount: healAmount

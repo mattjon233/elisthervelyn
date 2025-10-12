@@ -33,12 +33,6 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
     evelyn: '#A8D8EA'
   };
 
-  // DEBUG: Log para jogadores remotos
-  useEffect(() => {
-    if (!isLocalPlayer && character) {
-      console.log('🔧 DEBUG Remote Player:', { character, hasId: !!character?.id, hasNome: !!character?.nome });
-    }
-  }, [character, isLocalPlayer]);
 
   // Tenta pegar o ID do character (pode estar em .id ou .nome)
   const charId = character?.id || character?.nome?.toLowerCase() || 'elissa';
@@ -53,20 +47,6 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
   const { bonuses } = useLevelStore();
   const playerSpeed = 8.0 * bonuses.speedMultiplier; // Aplica bonus de velocidade
 
-  // DEBUG: Log dos bonuses ativos
-  useEffect(() => {
-    if (isLocalPlayer) {
-      console.log('🔧 DEBUG Player Bonuses:', {
-        speedMultiplier: bonuses.speedMultiplier,
-        calculatedSpeed: playerSpeed,
-        maxHealthBonus: bonuses.maxHealthBonus,
-        abilityCooldownMultiplier: bonuses.abilityCooldownMultiplier,
-        damageMultiplier: bonuses.damageMultiplier,
-        hasInvulnerability: bonuses.hasInvulnerability,
-        instakillChance: bonuses.instakillChance
-      });
-    }
-  }, [bonuses, isLocalPlayer, playerSpeed]);
 
   // Câmera third-person (apenas para o jogador local)
   const cameraControls = isLocalPlayer ? useThirdPersonCamera(meshRef) : null;
@@ -236,12 +216,6 @@ const Player = forwardRef(({ character, position = [0, 0.5, 0], isLocalPlayer = 
     return () => clearInterval(interval);
   }, [isLocalPlayer]);
 
-  // Log de habilidades ativas
-  useEffect(() => {
-    if (activeAbilities.length > 0) {
-      console.log('Habilidades ativas:', activeAbilities);
-    }
-  }, [activeAbilities]);
 
   // Configurações por personagem
   const heightScale = charId === 'esther' ? 0.9 : 1.0; // Esther um pouco mais baixa

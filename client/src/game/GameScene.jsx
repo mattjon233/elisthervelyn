@@ -137,12 +137,10 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
 
   useEffect(() => {
     const handleCoconaroMissionStart = ({ coconuts }) => {
-      console.log('CLIENT: Missão Coconaro iniciada! Cocos recebidos:', coconuts);
       setCoconuts(coconuts);
     };
 
     const handleCoconutCollected = ({ coconutId }) => {
-      console.log(`CLIENT: Coco ${coconutId} foi coletado.`);
       setCoconuts(prev => prev.filter(c => c.id !== coconutId));
     };
 
@@ -171,8 +169,6 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
         if (potion) {
           socketService.emit('use_potion');
           usePotion();
-        } else {
-          console.log('❌ Você não tem nenhuma poção!');
         }
       }
     };
@@ -494,9 +490,6 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
         }}
       />
       {players.filter(p => p.id !== playerId).map((player) => {
-        if (!player.stats && !player.character) {
-          console.warn('⚠️ Jogador remoto sem character:', player.id, player);
-        }
         return (
           <Player
             key={player.id}

@@ -68,7 +68,6 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
       if (isDead) return;
 
       const { action } = e.detail;
-      console.log('🎮 Mobile input recebido:', action);
 
       if (action === 'attack') {
         setKeys((prev) => ({ ...prev, attack: true }));
@@ -176,11 +175,8 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
     // Usa a poção apenas uma vez quando a tecla é pressionada
     if (keys.potion) {
       if (potion && !isDead) {
-        console.log('💊 Usando poção...');
         socketService.emit('use_potion');
         usePotion(); // Remove da store local imediatamente
-      } else if (!potion && !isDead) {
-        console.log('❌ Você não tem nenhuma poção!');
       }
       // Reseta o estado da tecla para evitar uso contínuo
       setKeys((prev) => ({ ...prev, potion: false }));
@@ -194,14 +190,12 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
     // DEBUG: Matar todos os monstros (B)
     if (keys.b && !keysPressed.current.b) {
       keysPressed.current.b = true;
-      console.log('🔧 DEBUG: Matando todos os monstros');
       socketService.emit('debug_kill_all');
     }
 
     // DEBUG: Completar missão atual (N)
     if (keys.n && !keysPressed.current.n) {
       keysPressed.current.n = true;
-      console.log('🔧 DEBUG: Completando missão atual');
       socketService.emit('debug_complete_mission');
     }
 
@@ -502,7 +496,6 @@ export function usePlayerControls(playerRef, speed = 8.0, triggerAbility, isDead
   // Detectar uso de habilidade
   useEffect(() => {
     if (keys.ability && triggerAbility) {
-      console.log('DEBUG: Tentando usar habilidade!'); // Log para depuração
       triggerAbility();
     }
   }, [keys.ability, triggerAbility]);

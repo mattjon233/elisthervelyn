@@ -43,31 +43,26 @@ function GameUI({ character, killCount = 0, abilityState, invulnerabilityState, 
   };
 
   const handleAttack = () => {
-    console.log('🗡️ Botão de ataque pressionado');
     const event = new CustomEvent('mobileInput', { detail: { action: 'attack' } });
     window.dispatchEvent(event);
   };
 
   const handleSpecial = () => {
-    console.log('✨ Botão de habilidade pressionado');
     const event = new CustomEvent('mobileInput', { detail: { action: 'ability' } });
     window.dispatchEvent(event);
   };
 
   const handleInteract = () => {
-    console.log('💬 Botão de interação pressionado');
     const event = new CustomEvent('mobileInput', { detail: { action: 'interact' } });
     window.dispatchEvent(event);
   };
 
   const handleUsePotion = () => {
-    console.log('💊 Botão de poção pressionado');
     const event = new CustomEvent('mobileInput', { detail: { action: 'potion' } });
     window.dispatchEvent(event);
   };
 
   const handleInvulnerability = () => {
-    console.log('🛡️ Botão de invulnerabilidade pressionado');
     const event = new CustomEvent('mobileInput', { detail: { action: 'invulnerability' } });
     window.dispatchEvent(event);
   };

@@ -27,7 +27,6 @@ function GameOverScreen({ killCount = 0 }) {
 
   const handleRespawn = () => {
     if (canRespawn) {
-      console.log('🔄 Solicitando renascimento ao servidor...');
       socketService.requestRespawn();
     }
   };

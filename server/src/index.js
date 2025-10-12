@@ -29,8 +29,6 @@ const gameController = new GameController(io);
 
 // Socket.io connection handling
 io.on('connection', (socket) => {
-  console.log(`[Server] Jogadora conectada: ${socket.id}`);
-
   // Criar ou entrar em sala
   socket.on('create_room', (data) => gameController.createRoom(socket, data));
   socket.on('join_room', (data) => gameController.joinRoom(socket, data));
@@ -79,11 +77,5 @@ io.on('connection', (socket) => {
 const PORT = process.env.PORT || 3001;
 
 httpServer.listen(PORT, () => {
-  console.log(`
-╔═══════════════════════════════════════╗
-║   🔮 O ORÁCULO - Server Running       ║
-║   Port: ${PORT}                       ║
-║   Environment: Development            ║
-╚═══════════════════════════════════════╝
-  `);
+  // Server started
 });

@@ -114,7 +114,6 @@ function VirtualJoystick({ onMove, onAttack, onSpecial, onInteract, onUsePotion,
           onTouchStart={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log('🗡️ Ataque touch');
             if (onAttack) onAttack();
           }}
           onClick={(e) => {
@@ -131,7 +130,6 @@ function VirtualJoystick({ onMove, onAttack, onSpecial, onInteract, onUsePotion,
           onTouchStart={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log('✨ Habilidade touch');
             if (onSpecial) onSpecial();
           }}
           onClick={(e) => {
@@ -151,7 +149,6 @@ function VirtualJoystick({ onMove, onAttack, onSpecial, onInteract, onUsePotion,
           onTouchStart={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log('💬 Interação touch');
             if (onInteract) onInteract();
           }}
           onClick={(e) => {
@@ -168,7 +165,6 @@ function VirtualJoystick({ onMove, onAttack, onSpecial, onInteract, onUsePotion,
           onTouchStart={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log('💊 Poção touch');
             if (onUsePotion) onUsePotion();
           }}
           onClick={(e) => {
@@ -186,7 +182,6 @@ function VirtualJoystick({ onMove, onAttack, onSpecial, onInteract, onUsePotion,
             onTouchStart={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('🛡️ Invulnerabilidade touch');
               if (onInvulnerability) onInvulnerability();
             }}
             onClick={(e) => {

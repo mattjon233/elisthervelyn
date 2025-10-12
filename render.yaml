@@ -1,0 +1,30 @@
+services:
+  # Backend Server (Node.js + Socket.IO)
+  - type: web
+    name: oraculo-server
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: cd server && npm install
+    startCommand: cd server && npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        generateValue: true
+
+  # Frontend Client (React + Vite)
+  - type: web
+    name: oraculo-client
+    env: static
+    region: oregon
+    plan: free
+    buildCommand: cd client && npm install && npm run build
+    staticPublishPath: ./client/dist
+    envVars:
+      - key: VITE_SERVER_URL
+        fromService:
+          type: web
+          name: oraculo-server
+          property: host

@@ -29,16 +29,13 @@ function Lobby({ onGameStart }) {
 
     // Listeners de eventos
     socketService.on('player_joined', (data) => {
-      console.log('[Lobby] Jogadora entrou:', data);
     });
 
     socketService.on('player_character_selected', (data) => {
-      console.log('[Lobby] Personagem selecionado:', data);
       setWaitingPlayers(data.players);
     });
 
     socketService.on('game_started', (data) => {
-      console.log('[Lobby] Jogo iniciado:', data);
       setPlayers(data.players);
       useGameStore.getState().setEnemies(data.enemies || []); // Salva os inimigos na store
       useGameStore.getState().setNpcs(data.npcs || []); // Salva os NPCs na store
@@ -76,7 +73,6 @@ function Lobby({ onGameStart }) {
       setError('');
     } catch (err) {
       setError('Erro ao criar sala');
-      console.error(err);
     }
   };
 
@@ -93,7 +89,6 @@ function Lobby({ onGameStart }) {
       setError('');
     } catch (err) {
       setError('Sala não encontrada');
-      console.error(err);
     }
   };
 

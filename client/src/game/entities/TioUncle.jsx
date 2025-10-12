@@ -48,7 +48,6 @@ function TioUncle({ position, playerPosition = [0, 0, 0] }) {
   }, [isPlayerNearby]);
 
   const handleInteraction = () => {
-    console.log('Interagindo com Tio Uncle!');
     setSpeechText('Olá! Dá uma olhada nas melhorias que tenho para o Rocket!');
     openShop();
     setTimeout(() => setSpeechText(''), 4000);

@@ -18,7 +18,6 @@ class SoundService {
     try {
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
     } catch (e) {
-      console.warn('Web Audio API não suportada:', e);
       this.enabled = false;
     }
   }

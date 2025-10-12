@@ -42,7 +42,6 @@ export const useMissionStore = create((set, get) => ({
         missionProgress: 0,
         missionReadyToComplete: false
       });
-      console.log('[Mission] Missão aceita:', mission.title);
     }
   },
 
@@ -58,11 +57,6 @@ export const useMissionStore = create((set, get) => ({
       missionProgress: newProgress,
       missionReadyToComplete: isComplete
     });
-
-    console.log(`[Mission] Progresso: ${newProgress}/${mission.requiredCount}`);
-    if (isComplete) {
-      console.log('[Mission] ✅ Missão completa! Volte ao Oráculo para recompensa.');
-    }
   },
 
   // Completar missão e coletar recompensa
@@ -83,7 +77,6 @@ export const useMissionStore = create((set, get) => ({
       missionReadyToComplete: false
     });
 
-    console.log('[Mission] 🎁 Recompensa coletada:', reward);
     return reward;
   },
 

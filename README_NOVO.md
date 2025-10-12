@@ -18,6 +18,9 @@
 ### 🛠️ **Se você precisa de COMANDOS úteis:**
 👉 Leia: **[COMANDOS_UTEIS.md](COMANDOS_UTEIS.md)**
 
+### 🌐 **Se você quer HOSPEDAR o jogo na internet:**
+👉 Leia: **[DEPLOY.md](DEPLOY.md)**
+
 ### 📖 **Se você quer a DOCUMENTAÇÃO completa:**
 👉 Leia: **[README.md](README.md)**
 

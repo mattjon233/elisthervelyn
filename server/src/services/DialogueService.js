@@ -28,7 +28,6 @@ export class DialogueService {
    */
   reloadDialogues() {
     this.dialogues = this.loadDialogues();
-    console.log('[DialogueService] Diálogos recarregados do arquivo JSON');
   }
 
   /**
@@ -38,7 +37,6 @@ export class DialogueService {
     const dialogue = this.dialogues[key];
 
     if (!dialogue) {
-      console.warn(`[DialogueService] Diálogo não encontrado: ${key}`);
       return {
         momento: 'Desconhecido',
         oraculo: ['...'],

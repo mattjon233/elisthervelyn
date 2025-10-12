@@ -53,8 +53,6 @@ export const useLevelStore = create((set, get) => ({
       newLevel += 1;
       newSkillPoints += 1; // 1 skill point por nível
       newXPToNext = Math.floor(100 * Math.pow(1.2, newLevel - 1)); // XP aumenta 20% por nível
-
-      console.log(`🎉 LEVEL UP! Nível ${newLevel}`);
     }
 
     set({
@@ -71,13 +69,11 @@ export const useLevelStore = create((set, get) => ({
 
     // Verificar se tem skill points
     if (state.skillPoints <= 0) {
-      console.log('❌ Sem skill points!');
       return false;
     }
 
     // Verificar se já tem a skill
     if (state.skills[skillName]) {
-      console.log('❌ Skill já desbloqueada!');
       return false;
     }
 
@@ -94,7 +90,6 @@ export const useLevelStore = create((set, get) => ({
     const required = prerequisites[skillName] || [];
     for (const req of required) {
       if (!state.skills[req]) {
-        console.log(`❌ Requer skill: ${req}`);
         return false;
       }
     }
@@ -131,11 +126,8 @@ export const useLevelStore = create((set, get) => ({
       skillPoints: state.skillPoints - 1,
     });
 
-    console.log(`✅ Skill desbloqueada: ${skillName}`);
-
     // Notificar servidor se for skill de HP
     if (skillName === 'healthIncrease' && socketService) {
-      console.log('📡 Enviando skill HP para servidor...');
       socketService.emit('skill_unlocked', { skillName: 'healthIncrease', bonus: 50 });
     }
 

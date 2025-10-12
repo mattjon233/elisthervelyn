@@ -142,7 +142,6 @@ export class GameService {
 
     // Rocket é imortal e não pode ser atacado
     if (target.type === 'rocket') {
-      console.log(`SERVER: Rocket não pode ser atacado! Ignorando dano.`);
       return;
     }
 
@@ -156,10 +155,6 @@ export class GameService {
     const finalDamage = Math.round(baseDamage * damageMultiplier);
 
     this.applyDamage(target, finalDamage);
-
-    const damageType = customDamage !== null ? '(habilidade)' : '(básico)';
-    const multiplierText = damageMultiplier !== 1.0 ? ` x${damageMultiplier}` : '';
-    console.log(`SERVER: Jogador ${attacker.id} (${attacker.character}) causou ${finalDamage}${multiplierText} ${damageType} de dano em ${target.id}. Vida restante: ${target.health}`);
   }
 
   /**
@@ -247,7 +242,6 @@ export class GameService {
             // SÓ CURA JOGADORES VIVOS
             if (distance <= healRadius && p.health > 0 && p.health < p.maxHealth) {
               p.health = Math.min(p.maxHealth, p.health + healAmount);
-              console.log(`SERVER: Rocket curou ${p.id} em ${healAmount}HP.`);
             }
           });
         }
@@ -278,7 +272,6 @@ export class GameService {
             enemy.lastAttackTime = now;
             const damage = coconaroStats.stats.damage;
             nearestPlayer.health = Math.max(0, nearestPlayer.health - damage);
-            console.log(`SERVER: Boss ${enemy.id} causou ${damage} de dano em ${nearestPlayer.id}. Vida restante: ${nearestPlayer.health}`);
           }
         }
 
@@ -326,7 +319,6 @@ export class GameService {
           if (!enemy.lastAttackTime || now - enemy.lastAttackTime > 1000) { // Cooldown de 1s
             enemy.lastAttackTime = now;
             nearestPlayer.health = Math.max(0, nearestPlayer.health - damage);
-            console.log(`SERVER: Inimigo ${enemy.id} (${enemy.type}) causou ${damage} de dano em ${nearestPlayer.id}. Vida restante: ${nearestPlayer.health}`);
           }
         }
       }

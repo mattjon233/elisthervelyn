@@ -28,7 +28,6 @@ export class MissionService {
    */
   reloadMissions() {
     this.missionData = this.loadMissions();
-    console.log('[MissionService] Missões recarregadas do arquivo JSON');
   }
 
   /**
@@ -44,7 +43,6 @@ export class MissionService {
     }
 
     if (!mission) {
-      console.warn(`[MissionService] Missão não encontrada: ${missionId}`);
       return null;
     }
 

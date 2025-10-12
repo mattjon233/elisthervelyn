@@ -16,7 +16,6 @@ export const useShopStore = create((set) => ({
 
   buyUpgrade: (upgradeId) => set((state) => {
     if (state.upgrades[upgradeId]) {
-      console.log('Melhoria já comprada!');
       return state; // Already purchased
     }
 

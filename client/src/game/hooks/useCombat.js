@@ -73,10 +73,6 @@ export function useCombat(playerRef, character, isAttacking) {
           const isInstakill = Math.random() < bonuses.instakillChance;
           const damage = isInstakill ? 9999 : getBaseDamage(); // 9999 = instakill
 
-          if (isInstakill) {
-            console.log('💀 INSTAKILL!');
-          }
-
           hits.push({
             enemyId: enemy.id,
             damage: damage,

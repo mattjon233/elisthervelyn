@@ -23,7 +23,6 @@ export class GameController {
           room.players.forEach(player => {
             if (player.health <= 0 && !player.deathTimestamp) {
               player.deathTimestamp = now;
-              console.log(`SERVER: Jogador ${player.id} morreu. Aguardando solicitação de respawn.`);
             }
           });
           this.io.to(room.id).emit('game_state_updated', { enemies: room.enemies, players: room.players });
@@ -55,7 +54,6 @@ export class GameController {
     this.playerRooms.set(socket.id, roomId);
     socket.join(roomId);
     socket.emit('room_created', { roomId, room });
-    console.log(`[GameController] Sala criada: ${roomId} por ${socket.id}`);
   }
 
   joinRoom(socket, { roomId }) {
@@ -72,7 +70,6 @@ export class GameController {
     socket.join(roomId);
     socket.emit('room_joined', { roomId, room });
     this.io.to(roomId).emit('player_joined', { playerId: socket.id });
-    console.log(`[GameController] ${socket.id} entrou na sala ${roomId}`);
   }
 
   selectCharacter(socket, { character }) {
@@ -121,13 +118,11 @@ export class GameController {
     const mission1Briefing = await this.dialogueService.getDialogue('missao_1_briefing');
     const mission1Data = await this.missionService.getMission(1);
     this.io.to(roomId).emit('game_started', { introDialogue, mission1Briefing, mission: mission1Data, players: room.players, enemies: room.enemies, npcs: room.npcs });
-    console.log(`[GameController] Jogo iniciado na sala ${roomId}`);
   }
 
   async startGameForPlayer(socket, room) {
     const missionData = await this.missionService.getMission(room.currentMission || 1);
     socket.emit('game_started', { mission: missionData, players: room.players, enemies: room.enemies, npcs: room.npcs });
-    console.log(`[GameController] Enviando dados de jogo em andamento para ${socket.id} na sala ${room.id}`);
   }
 
   forceStartGame(socket) {
@@ -142,7 +137,6 @@ export class GameController {
       socket.emit('error', { message: 'Nenhuma jogadora pronta' });
       return;
     }
-    console.log(`[GameController] Host forçou início da sala ${roomId}`);
     this.startGame(roomId);
   }
 
@@ -169,7 +163,6 @@ export class GameController {
       const wasAlive = target && target.health > 0;
       const instakillTriggered = instakillChance > 0 && Math.random() < instakillChance;
       if (instakillTriggered && target && target.health > 0) {
-        console.log(`💀 INSTAKILL! ${socket.id} matou ${targetId} instantaneamente (${instakillChance * 100}% chance)`);
         target.health = 0;
       } else {
         this.gameService.applyAttackDamage(player, room.enemies, targetId, damage, damageMultiplier);
@@ -197,7 +190,6 @@ export class GameController {
     if (enemy.type === 'coconaro') {
       // Coconaro só morre de verdade se todos os cocos foram coletados
       if (room.activeMission.id === 'coconaro_boss_fight' && room.activeMission.phase === 'kill_coconaro') {
-        console.log('SERVER: COCONARO DERROTADO! Iniciando cutscene final.');
         this.io.to(roomId).emit('final_cutscene_start', { dialogueKey: 'coconaro_derrotado' });
         setTimeout(() => {
           this.io.to(roomId).emit('show_credits');
@@ -219,7 +211,6 @@ export class GameController {
         room.enemies = room.enemies.filter(e => e.id !== 'coconaro_boss');
       } else {
         // Se o HP acabou mas os cocos não, ele não morre de verdade
-        console.log('SERVER: HP do Coconaro chegou a 0, mas os cocos não foram coletados. Restaurando 1 HP.');
         enemy.health = 1;
       }
     } else if (room.activeMission && room.activeMission.target === enemy.type) {

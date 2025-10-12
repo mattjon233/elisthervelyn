@@ -51,7 +51,6 @@ function Oracle({ playerPosition = [0, 0, 0], preciousStoneActive = false }) {
   // Novo listener para o evento de escolha de missão
   useEffect(() => {
     const handleShowChoice = (data) => {
-      console.log('CLIENT: Recebido evento show_mission_choice', data);
       setShowMissionChoice(true, data);
     };
 
