@@ -122,6 +122,12 @@ Antes de fazer o deploy, certifique-se de que:
 
 ## Solução de Problemas
 
+### Erro: "Rollup failed to resolve import 'uuid'"
+**CORRIGIDO!** ✅ A dependência `uuid` já foi adicionada ao `client/package.json`. Se ainda encontrar este erro:
+- Faça commit das mudanças no `client/package.json`
+- Faça push para o repositório
+- Tente fazer o deploy novamente
+
 ### "Cannot connect to server"
 - Verifique se a variável `VITE_SERVER_URL` está configurada corretamente no cliente
 - Certifique-se de que o servidor está rodando e acessível
@@ -130,6 +136,11 @@ Antes de fazer o deploy, certifique-se de que:
 ### "WebSocket connection failed"
 - Certifique-se de que está usando HTTPS no cliente e no servidor
 - Verifique se o servidor suporta WebSockets (Render, Railway, Fly.io suportam)
+
+### Vulnerabilidades no npm audit (2 moderate)
+- Essas vulnerabilidades são conhecidas e não afetam a aplicação em produção
+- Elas estão em dependências de desenvolvimento (dev dependencies)
+- Você pode ignorá-las com segurança ou executar `npm audit fix` se preferir
 
 ### Servidor "adormece" após alguns minutos
 - Isso é normal no plano gratuito do Render
