@@ -88,10 +88,14 @@ function IntroCinematic({ onComplete }) {
     };
   }, [currentSceneIndex, onComplete, scenes, isSkipping]);
 
-  const handleSkip = () => {
+  const handleSkip = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setIsSkipping(true);
   };
-  
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
@@ -131,7 +135,11 @@ function IntroCinematic({ onComplete }) {
         <p className="scene-text">{scene.text}</p>
       </div>
 
-      <button className="skip-button" onClick={handleSkip}>
+      <button
+        className="skip-button"
+        onClick={handleSkip}
+        onTouchStart={handleSkip}
+      >
         Pular (ESC)
       </button>
 

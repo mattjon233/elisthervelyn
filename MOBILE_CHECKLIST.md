@@ -7,10 +7,18 @@
 - [x] Câmera agora rotaciona no mobile
 - [x] Touch events funcionando corretamente
 - [x] Responsividade melhorada
+- [x] Botão de pular cenas agora funciona no mobile ⭐ NOVO!
 
 ---
 
 ## 📋 Lista de Testes
+
+### 0. Cinematográficas (NOVO!)
+- [ ] Ao iniciar o jogo, cinemática de introdução aparece
+- [ ] Tocar no botão "Pular (ESC)" - pula para o jogo
+- [ ] Botão é grande o suficiente para tocar
+- [ ] Sem delay ou duplo-clique
+- [ ] Desktop: ESC também funciona
 
 ### 1. Movimento do Personagem
 - [ ] Abrir o jogo no mobile
