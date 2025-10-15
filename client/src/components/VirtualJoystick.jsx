@@ -1,50 +1,90 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import './VirtualJoystick.css';
 
 /**
  * Joystick Virtual para controle touch em dispositivos móveis
+ * Reformulado para melhor captura e responsividade de touch
  */
 function VirtualJoystick({ onMove, onAttack, onSpecial, onInteract, onUsePotion, onInvulnerability, hasInvulnerability = false, abilityState = null }) {
   const joystickRef = useRef(null);
   const stickRef = useRef(null);
+  const touchIdRef = useRef(null);
+  const centerRef = useRef({ x: 0, y: 0 });
   const [active, setActive] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
 
   const maxDistance = 50; // Raio máximo do joystick
 
+  // Memoizar callback de movimento para evitar re-renders
+  const handleMove = useCallback((x, y) => {
+    if (onMove) {
+      onMove({ x, y });
+    }
+  }, [onMove]);
+
   useEffect(() => {
     const joystick = joystickRef.current;
     if (!joystick) return;
 
-    let touchId = null;
-    let centerX = 0;
-    let centerY = 0;
-
     const handleTouchStart = (e) => {
+      // Prevenir scroll e outros comportamentos padrão
       e.preventDefault();
-      const touch = e.touches[0];
-      touchId = touch.identifier;
+      e.stopPropagation();
 
+      const touch = e.touches[0];
+      touchIdRef.current = touch.identifier;
+
+      // Recalcular centro sempre no início do toque
       const rect = joystick.getBoundingClientRect();
-      centerX = rect.left + rect.width / 2;
-      centerY = rect.top + rect.height / 2;
+      centerRef.current = {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2
+      };
 
       setActive(true);
+
+      // Iniciar movimento imediatamente
+      const deltaX = touch.clientX - centerRef.current.x;
+      const deltaY = touch.clientY - centerRef.current.y;
+
+      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      const clampedDistance = Math.min(distance, maxDistance);
+
+      let finalX = deltaX;
+      let finalY = deltaY;
+
+      if (distance > maxDistance) {
+        const angle = Math.atan2(deltaY, deltaX);
+        finalX = Math.cos(angle) * maxDistance;
+        finalY = Math.sin(angle) * maxDistance;
+      }
+
+      setPosition({ x: finalX, y: finalY });
+
+      // Normalizar e enviar
+      const normalizedX = distance > 0 ? (finalX / maxDistance) : 0;
+      const normalizedY = distance > 0 ? (finalY / maxDistance) : 0;
+
+      handleMove(normalizedX, normalizedY);
     };
 
     const handleTouchMove = (e) => {
       e.preventDefault();
-      if (touchId === null) return;
+      e.stopPropagation();
 
-      const touch = Array.from(e.touches).find(t => t.identifier === touchId);
+      if (touchIdRef.current === null) return;
+
+      // Encontrar o toque correspondente
+      const touch = Array.from(e.touches).find(t => t.identifier === touchIdRef.current);
       if (!touch) return;
 
       // Calcular deslocamento do centro
-      let deltaX = touch.clientX - centerX;
-      let deltaY = touch.clientY - centerY;
+      let deltaX = touch.clientX - centerRef.current.x;
+      let deltaY = touch.clientY - centerRef.current.y;
 
-      // Limitar ao raio máximo
+      // Calcular distância e limitar ao raio máximo
       const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
       if (distance > maxDistance) {
         const angle = Math.atan2(deltaY, deltaX);
         deltaX = Math.cos(angle) * maxDistance;
@@ -56,27 +96,34 @@ function VirtualJoystick({ onMove, onAttack, onSpecial, onInteract, onUsePotion,
 
       // Normalizar para valores -1 a 1
       // X: -1 = esquerda, +1 = direita
-      // Y: -1 = cima, +1 = baixo (normalizado corretamente)
-      const normalizedX = deltaX / maxDistance;
-      const normalizedY = deltaY / maxDistance;
+      // Y: -1 = cima, +1 = baixo
+      const normalizedX = distance > 0 ? (deltaX / maxDistance) : 0;
+      const normalizedY = distance > 0 ? (deltaY / maxDistance) : 0;
 
       // Callback com direção
-      if (onMove) {
-        onMove({ x: normalizedX, y: normalizedY });
-      }
+      handleMove(normalizedX, normalizedY);
     };
 
     const handleTouchEnd = (e) => {
       e.preventDefault();
-      touchId = null;
+      e.stopPropagation();
+
+      // Verificar se foi o toque correto que terminou
+      const wasTouchEnded = Array.from(e.changedTouches).some(
+        t => t.identifier === touchIdRef.current
+      );
+
+      if (!wasTouchEnded) return;
+
+      touchIdRef.current = null;
       setActive(false);
       setPosition({ x: 0, y: 0 });
 
-      if (onMove) {
-        onMove({ x: 0, y: 0 });
-      }
+      // Parar movimento
+      handleMove(0, 0);
     };
 
+    // Adicionar listeners com passive: false para prevenir scroll
     joystick.addEventListener('touchstart', handleTouchStart, { passive: false });
     joystick.addEventListener('touchmove', handleTouchMove, { passive: false });
     joystick.addEventListener('touchend', handleTouchEnd, { passive: false });
@@ -88,7 +135,7 @@ function VirtualJoystick({ onMove, onAttack, onSpecial, onInteract, onUsePotion,
       joystick.removeEventListener('touchend', handleTouchEnd);
       joystick.removeEventListener('touchcancel', handleTouchEnd);
     };
-  }, [onMove]);
+  }, [handleMove, maxDistance]);
 
   return (
     <div className="virtual-controls">
