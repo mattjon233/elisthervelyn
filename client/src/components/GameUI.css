@@ -434,6 +434,11 @@
   -webkit-backdrop-filter: blur(8px);
   box-shadow: 0 4px 15px rgba(255, 105, 180, 0.5), inset 0 2px 10px rgba(255, 255, 255, 0.3);
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .camera-btn:hover {
@@ -444,8 +449,8 @@
 }
 
 .camera-btn:active {
-  transform: scale(0.95);
-  box-shadow: 0 2px 8px rgba(255, 105, 180, 0.5);
+  transform: scale(0.92);
+  box-shadow: 0 2px 8px rgba(255, 105, 180, 0.5), inset 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .camera-left {
@@ -554,13 +559,14 @@
 
 /* Mobile Portrait e telas pequenas */
 @media (max-width: 768px) {
-  /* HUD Superior - Layout vertical compacto */
+  /* HUD Superior - Layout horizontal para não sobrepor */
   .hud-top {
     top: 8px;
     left: 8px;
     right: 8px;
-    flex-direction: column;
+    flex-direction: row;
     gap: 8px;
+    flex-wrap: nowrap;
   }
 
   .hud-widget {
@@ -569,10 +575,12 @@
     border-width: 2px;
   }
 
-  /* Widget do Jogador - Compacto */
+  /* Widget do Jogador - Compacto, ocupa espaço flexível */
   .character-info-widget {
     min-width: unset;
     gap: 10px;
+    flex: 0 1 auto;
+    max-width: 50%;
   }
 
   .character-portrait {
@@ -599,19 +607,24 @@
     font-weight: 900;
   }
 
-  /* Widget de Missão - Horizontal compacto */
+  /* Widget de Missão - Horizontal compacto, ocupa espaço restante */
   .mission-info-widget {
     padding: 8px 12px;
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   .mission-text {
     font-size: 13px;
     margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .stats-row {
-    gap: 15px;
-    justify-content: center;
+    gap: 12px;
+    justify-content: flex-start;
   }
 
   .kill-counter, .gold-counter {
@@ -681,46 +694,69 @@
 
   /* Widget do Jogador - Extra compacto */
   .character-info-widget {
-    gap: 8px;
+    gap: 6px;
+    flex: 0 1 auto;
+    max-width: 48%;
   }
 
   .character-portrait {
-    width: 35px;
-    height: 35px;
+    width: 32px;
+    height: 32px;
     border-width: 2px;
   }
 
   .character-name {
-    font-size: 14px;
-    margin-bottom: 3px;
+    font-size: 13px;
+    margin-bottom: 2px;
+  }
+
+  .character-level {
+    font-size: 11px;
+  }
+
+  .level-key-hint {
+    font-size: 8px;
   }
 
   .health-bar {
-    height: 18px;
+    height: 16px;
   }
 
   .health-text {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 900;
     text-shadow: 2px 2px 6px rgba(0, 0, 0, 1), 0 0 3px rgba(0, 0, 0, 1);
+  }
+
+  .xp-bar {
+    height: 14px;
+  }
+
+  .xp-text {
+    font-size: 9px;
   }
 
   /* Widget de Missão - Extra compacto */
   .mission-info-widget {
     padding: 6px 10px;
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   .mission-text {
-    font-size: 12px;
+    font-size: 11px;
     margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .stats-row {
-    gap: 12px;
+    gap: 10px;
   }
 
   .kill-counter, .gold-counter {
-    font-size: 14px;
+    font-size: 13px;
   }
 
   /* Controles de câmera - Mobile pequeno: acima do joystick */

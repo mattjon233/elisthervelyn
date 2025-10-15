@@ -69,12 +69,24 @@ function GameUI({ character, killCount = 0, abilityState, invulnerabilityState, 
     window.dispatchEvent(event);
   };
 
-  const handleRotateLeft = () => {
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', bubbles: true }));
+  const handleRotateLeft = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    // Disparar evento customizado para rotação de câmera
+    const event = new CustomEvent('cameraRotate', { detail: { direction: 'left' } });
+    window.dispatchEvent(event);
   };
 
-  const handleRotateRight = () => {
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'x', bubbles: true }));
+  const handleRotateRight = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    // Disparar evento customizado para rotação de câmera
+    const event = new CustomEvent('cameraRotate', { detail: { direction: 'right' } });
+    window.dispatchEvent(event);
   };
 
   // Atalho K para abrir Skill Tree
@@ -196,10 +208,18 @@ function GameUI({ character, killCount = 0, abilityState, invulnerabilityState, 
 
       {/* Botões de Rotação da Câmera */}
       <div className="camera-controls">
-        <button className="camera-btn camera-left" onClick={handleRotateLeft}>
+        <button
+          className="camera-btn camera-left"
+          onTouchStart={handleRotateLeft}
+          onClick={handleRotateLeft}
+        >
           ↻ Z
         </button>
-        <button className="camera-btn camera-right" onClick={handleRotateRight}>
+        <button
+          className="camera-btn camera-right"
+          onTouchStart={handleRotateRight}
+          onClick={handleRotateRight}
+        >
           ↺ X
         </button>
       </div>

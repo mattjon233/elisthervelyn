@@ -18,7 +18,7 @@ export function useThirdPersonCamera(targetRef) {
   const [cameraAngle, setCameraAngle] = useState(0);
   const cameraAngleRef = useRef(0);
 
-  // Listener para teclas Z e X
+  // Listener para teclas Z e X (desktop)
   useEffect(() => {
     const handleKeyDown = (e) => {
       const key = e.key.toLowerCase();
@@ -31,8 +31,23 @@ export function useThirdPersonCamera(targetRef) {
       }
     };
 
+    // Listener para evento customizado de rotação (mobile)
+    const handleCameraRotate = (e) => {
+      const { direction } = e.detail;
+      if (direction === 'left') {
+        setCameraAngle(prev => prev + Math.PI / 4); // 45 graus
+      } else if (direction === 'right') {
+        setCameraAngle(prev => prev - Math.PI / 4); // 45 graus
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('cameraRotate', handleCameraRotate);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('cameraRotate', handleCameraRotate);
+    };
   }, []);
 
   // Atualizar ref quando o state mudar
