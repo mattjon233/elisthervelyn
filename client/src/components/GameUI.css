@@ -568,6 +568,7 @@
     gap: 5px;
     flex-wrap: nowrap;
     align-items: stretch;
+    justify-content: flex-start; /* Alinha tudo à esquerda, permitindo que mission-info use margin-left: auto */
   }
 
   .hud-widget {
@@ -631,35 +632,33 @@
     font-size: 8px;
   }
 
-  /* Widget de Missão - MÍNIMO necessário */
+  /* Widget de Missão - MÍNIMO necessário - ALINHADO À DIREITA */
   .mission-info-widget {
     padding: 4px 8px;
-    flex: 1 1 auto;
+    flex: 0 0 auto; /* Não cresce - tamanho fixo baseado no conteúdo */
     min-width: 0;
     gap: 2px;
     display: flex;
     flex-direction: column;
     justify-content: center;
+    align-items: flex-end; /* Alinha conteúdo à direita */
+    margin-left: auto; /* Empurra widget para a direita */
   }
 
   .mission-text {
-    font-size: 11px;
-    margin-bottom: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    line-height: 1.2;
-    max-width: 100%;
+    display: none; /* Oculta texto da missão no mobile */
   }
 
   .stats-row {
     gap: 8px;
-    justify-content: flex-start;
+    justify-content: flex-end; /* Alinha kills/gold à direita */
+    flex-direction: row;
   }
 
   .kill-counter, .gold-counter {
     font-size: 12px;
     line-height: 1;
+    white-space: nowrap;
   }
 
   /* Controles de câmera - Mobile: acima do joystick */
@@ -716,6 +715,7 @@
     left: 3px;
     right: 3px;
     gap: 4px;
+    justify-content: flex-start; /* Mantém alinhamento à esquerda */
   }
 
   .hud-widget {
@@ -771,30 +771,29 @@
     font-size: 8px;
   }
 
-  /* Widget de Missão - ULTRA compacto */
+  /* Widget de Missão - ULTRA compacto - ALINHADO À DIREITA */
   .mission-info-widget {
     padding: 3px 6px;
-    flex: 1 1 auto;
+    flex: 0 0 auto; /* Não cresce */
     min-width: 0;
     gap: 1px;
+    align-items: flex-end; /* Alinha conteúdo à direita */
+    margin-left: auto; /* Empurra widget para a direita */
   }
 
   .mission-text {
-    font-size: 10px;
-    margin-bottom: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    line-height: 1.1;
+    display: none; /* Oculta texto da missão no mobile pequeno */
   }
 
   .stats-row {
     gap: 6px;
+    justify-content: flex-end; /* Alinha kills/gold à direita */
   }
 
   .kill-counter, .gold-counter {
     font-size: 11px;
     line-height: 1;
+    white-space: nowrap;
   }
 
   /* Controles de câmera - Mobile pequeno: acima do joystick */
