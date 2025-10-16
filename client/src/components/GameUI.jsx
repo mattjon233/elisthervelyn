@@ -11,13 +11,36 @@ import { useLevelStore } from '../store/levelStore';
 import { usePrevious } from '../game/hooks/usePrevious';
 
 function GameUI({ character, killCount = 0, abilityState, invulnerabilityState, stonePrompts = {} }) {
-  const { 
-    players, playerId, currentDialogue, triggerDamageEffect, triggerHealEffect, 
-    isSkillTreeOpen, setIsSkillTreeOpen 
+  const {
+    players, playerId, currentDialogue, triggerDamageEffect, triggerHealEffect,
+    isSkillTreeOpen, setIsSkillTreeOpen
   } = useGameStore();
   const { teamGold, activeMission, missionProgress } = useMissionStore();
   const { potion } = useShopStore();
   const { currentLevel, currentXP, xpToNextLevel, skillPoints, bonuses } = useLevelStore();
+
+  // Lógica para suportar diferentes tipos de missões
+  const getMissionProgress = () => {
+    if (!activeMission) return { current: 0, required: 0, icon: '🧟' };
+
+    const isCoconaroMission = activeMission.id === 'coconaro_boss_fight';
+
+    if (isCoconaroMission) {
+      return {
+        current: missionProgress?.cocos || 0,
+        required: activeMission.objetivos?.alvos?.cocos || 20,
+        icon: '🥥'
+      };
+    } else {
+      return {
+        current: missionProgress || 0,
+        required: activeMission.requiredCount || 0,
+        icon: '🧟'
+      };
+    }
+  };
+
+  const missionData = getMissionProgress();
 
   // Encontra os dados do jogador local na lista de jogadores
   const localPlayer = players.find(p => p.id === playerId);
@@ -136,12 +159,14 @@ function GameUI({ character, killCount = 0, abilityState, invulnerabilityState, 
 
         {/* Widget de Missão e Kills */}
         <div className="hud-widget mission-info-widget">
-          <div className="mission-text">{activeMission ? activeMission.title : 'Aguardando missão...'}</div>
-          {activeMission && (
-            <div className="mission-progress-mobile">
-              🧟 {missionProgress}/{activeMission.requiredCount}
-            </div>
-          )}
+          <div className="mission-text">
+            <span className="mission-text-desktop">
+              {activeMission ? activeMission.title : 'Aguardando missão...'}
+            </span>
+            <span className="mission-text-mobile">
+              {activeMission ? `${missionData.icon} ${missionData.current}/${missionData.required}` : '⏳'}
+            </span>
+          </div>
           <div className="stats-row">
             <div className="kill-counter">
               💀 {killCount}
@@ -158,7 +183,14 @@ function GameUI({ character, killCount = 0, abilityState, invulnerabilityState, 
       {currentDialogue && (
         <div className="dialogue-box">
           <div className="dialogue-speaker">{currentDialogue.speaker || 'Oráculo'}</div>
-          <div className="dialogue-text">{currentDialogue.text || currentDialogue.linhas?.[0]}</div>
+          <div className="dialogue-text">
+            <span className="dialogue-text-desktop">
+              {currentDialogue.text || currentDialogue.linhas?.[0]}
+            </span>
+            <span className="dialogue-text-mobile">
+              {activeMission ? `${missionData.icon} ${missionData.current}/${missionData.required}` : (currentDialogue.text || currentDialogue.linhas?.[0])}
+            </span>
+          </div>
         </div>
       )}
 
