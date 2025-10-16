@@ -116,7 +116,7 @@ export const useLevelStore = create((set, get) => ({
         newBonuses.hasInvulnerability = true;
         break;
       case 'instakillChance':
-        newBonuses.instakillChance = 0.15; // 15% chance
+        newBonuses.instakillChance = 0.05; // 15% chance
         break;
     }
 

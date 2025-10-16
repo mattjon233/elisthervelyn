@@ -16,7 +16,7 @@ function MissionChoiceUI() {
 
   return (
     <div className="mission-choice-overlay">
-      <div className="mission-choice-box dialogue-box">
+      <div className="mission-choice-box">
         <div className="dialogue-speaker">{missionChoiceData.title || 'Oráculo'}</div>
         {missionChoiceData.dialogue.map((line, index) => (
           <p key={index} className="dialogue-text">{line}</p>

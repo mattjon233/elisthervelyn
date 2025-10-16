@@ -22,14 +22,37 @@ function MissionUI() {
   let currentProgress = 0;
   let requiredCount = 0;
   let progressText = 'Progresso';
+  let missionIcon = '🧟';
 
   if (isCoconaroMission) {
-    currentProgress = missionProgress?.cocos || 0;
-    requiredCount = activeMission.objetivos?.alvos?.cocos || 20;
-    progressText = activeMission.objetivos?.texto_ui || 'Coletar Cocos';
+    const coconaroMorto = missionProgress?.coconaro || 0;
+
+    if (coconaroMorto > 0) {
+      // Boss derrotado
+      currentProgress = coconaroMorto;
+      requiredCount = 1;
+      progressText = 'Enfrentar Coconaro';
+      missionIcon = '🦍';
+    } else {
+      // Coletar cocos
+      currentProgress = missionProgress?.cocos || 0;
+      requiredCount = activeMission.objetivos?.alvos?.cocos || 20;
+      progressText = activeMission.objetivos?.texto_ui || 'Coletar Cocos';
+      missionIcon = '🥥';
+    }
   } else {
     currentProgress = missionProgress || 0;
     requiredCount = activeMission.requiredCount || 0;
+
+    // Definir ícone baseado no target
+    const target = activeMission.target;
+    if (target === 'zombie') {
+      missionIcon = '🧟';
+      progressText = 'Eliminar Zumbis';
+    } else if (target === 'precious_stone') {
+      missionIcon = '💎';
+      progressText = 'Coletar Pedra';
+    }
   }
 
   const isMissionComplete = requiredCount > 0 && currentProgress >= requiredCount;
@@ -41,8 +64,17 @@ function MissionUI() {
         <div className="mission-title-group">
           <span className="mission-icon">📜</span>
           <h3>
-            {title}
-            {isMinimized && requiredCount > 0 && ` (${currentProgress}/${requiredCount})`}
+            {!isMinimized && title}
+            {isMinimized && (
+              <>
+                <span className="mission-title-desktop">
+                  {title} ({currentProgress}/{requiredCount})
+                </span>
+                <span className="mission-title-mobile">
+                  {missionIcon} {currentProgress}/{requiredCount}
+                </span>
+              </>
+            )}
           </h3>
         </div>
         <span className="minimize-icon">{isMinimized ? '[+]' : '[-]'}</span>

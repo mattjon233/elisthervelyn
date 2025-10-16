@@ -23,7 +23,7 @@
 
 .mission-header {
   display: flex;
-  justify-content: space-between; /* Espaça o título e o ícone */
+  /* justify-content: space-between; */ /* Removido para usar margin no ícone */
   align-items: center;
   gap: 10px;
   margin-bottom: 12px;
@@ -37,6 +37,12 @@
   margin-bottom: 0;
   border-bottom: none;
   padding-bottom: 0;
+  gap: 8px; /* Diminui espaço quando minimizado */
+  /* justify-content: flex-start; */ /* Não é mais necessário */
+}
+
+.mission-ui.minimized .minimize-icon {
+  margin-left: 8px; /* Pequeno espaço entre título e ícone */
 }
 
 .mission-title-group {
@@ -49,6 +55,7 @@
   font-size: 14px;
   font-weight: bold;
   color: #FFD700;
+  margin-left: auto; /* Empurra o ícone para a direita */
 }
 
 .mission-body {
@@ -76,6 +83,15 @@
   color: #E0E0E0;
   margin-bottom: 16px;
   line-height: 1.4;
+}
+
+/* Versões desktop/mobile do título minimizado */
+.mission-title-mobile {
+  display: none;
+}
+
+.mission-title-desktop {
+  display: inline;
 }
 
 .mission-progress {
@@ -164,9 +180,14 @@
 @media (max-width: 768px) {
   .mission-ui {
     top: 10px;
-    right: 10px;
-    width: 280px;
+    width: auto; /* Largura automática para se ajustar ao conteúdo */
+    max-width: calc(100% - 40px); /* Previne overflow */
     padding: 16px;
+  }
+
+  /* Esconde o ícone de pergaminho no modo minimizado em mobile para economizar espaço */
+  .mission-ui.minimized .mission-icon {
+    display: none;
   }
 
   .mission-header h3 {
@@ -175,6 +196,15 @@
 
   .mission-description {
     font-size: 13px;
+  }
+
+  /* Inverter versões do título minimizado no mobile */
+  .mission-title-desktop {
+    display: none !important;
+  }
+
+  .mission-title-mobile {
+    display: inline !important;
   }
 }
 
@@ -185,43 +215,121 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   z-index: 1000;
-  backdrop-filter: blur(5px);
+  animation: overlayFadeIn 0.3s ease-out;
 }
 
 .mission-choice-box {
+  background: #1a1a1a;
+  padding: 1.5rem;
+  border-radius: 15px;
   width: 90%;
-  max-width: 600px;
-  padding: 30px;
-  border: 2px solid rgba(255, 215, 0, 0.7);
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 2px solid #FFD700;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  color: white;
+  animation: modalBounceIn 0.4s ease-out;
+}
+
+/* Animações reutilizadas da ShopUI */
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalBounceIn {
+  0% { transform: scale(0.5); opacity: 0; }
+  70% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.mission-choice-box .dialogue-speaker {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #FFD700;
+  margin-bottom: 1rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.mission-choice-box .dialogue-text {
+  font-size: 1rem;
+  color: #f0f0f0;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
 }
 
 .mission-choices {
-  margin-top: 20px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0.8rem;
 }
 
 .mission-choices button {
-  padding: 15px;
-  background-color: rgba(255, 255, 255, 0.1);
+  padding: 0.8rem 1.2rem;
+  background: linear-gradient(145deg, #333, #222);
   color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 5px;
+  border: 2px solid #FFD700;
+  border-radius: 10px;
   cursor: pointer;
-  font-size: 1.1rem;
-  transition: all 0.2s;
+  font-size: 1rem;
+  font-weight: bold;
   text-align: left;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .mission-choices button:hover {
-  background-color: rgba(255, 215, 0, 0.2);
-  border-color: rgba(255, 215, 0, 0.5);
-  transform: scale(1.02);
+  background: linear-gradient(145deg, #FFD700, #FFA500);
+  color: #1a1a1a;
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
+}
+
+/* --- Responsividade Mobile --- */
+@media (max-width: 768px) {
+  .mission-choice-box {
+    width: 95%;
+    padding: 1.5rem;
+  }
+
+  .mission-choice-box .dialogue-speaker {
+    font-size: 1.3rem;
+  }
+
+  .mission-choice-box .dialogue-text {
+    font-size: 0.95rem;
+  }
+
+  .mission-choices button {
+    padding: 0.9rem 1.3rem;
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .mission-choice-box {
+    padding: 1.2rem;
+    max-height: 85vh;
+  }
+
+  .mission-choice-box .dialogue-speaker {
+    font-size: 1.2rem;
+  }
+
+  .mission-choice-box .dialogue-text {
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .mission-choices button {
+    padding: 0.8rem 1rem;
+    font-size: 0.9rem;
+  }
 }

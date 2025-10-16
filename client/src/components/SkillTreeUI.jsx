@@ -102,7 +102,7 @@ function SkillTreeUI({ onClose }) {
               >
                 <div className="skill-icon">💀</div>
                 <div className="skill-name">Execução</div>
-                <div className="skill-description">15% chance instakill</div>
+                <div className="skill-description">5% chance instakill</div>
                 {skills.instakillChance && <div className="skill-check">✓</div>}
                 {!skills.damageBoost && <div className="skill-lock">🔒</div>}
               </div>
