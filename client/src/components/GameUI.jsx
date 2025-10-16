@@ -15,7 +15,7 @@ function GameUI({ character, killCount = 0, abilityState, invulnerabilityState, 
     players, playerId, currentDialogue, triggerDamageEffect, triggerHealEffect, 
     isSkillTreeOpen, setIsSkillTreeOpen 
   } = useGameStore();
-  const { teamGold, activeMission } = useMissionStore();
+  const { teamGold, activeMission, missionProgress } = useMissionStore();
   const { potion } = useShopStore();
   const { currentLevel, currentXP, xpToNextLevel, skillPoints, bonuses } = useLevelStore();
 
@@ -137,12 +137,18 @@ function GameUI({ character, killCount = 0, abilityState, invulnerabilityState, 
         {/* Widget de Missão e Kills */}
         <div className="hud-widget mission-info-widget">
           <div className="mission-text">{activeMission ? activeMission.title : 'Aguardando missão...'}</div>
+          {activeMission && (
+            <div className="mission-progress-mobile">
+              🧟 {missionProgress}/{activeMission.requiredCount}
+            </div>
+          )}
           <div className="stats-row">
             <div className="kill-counter">
               💀 {killCount}
             </div>
             <div className="gold-counter">
-              💰 {teamGold} Ouro
+              <span className="gold-desktop">💰 {teamGold} Ouro</span>
+              <span className="gold-mobile">💰 {teamGold}</span>
             </div>
           </div>
         </div>

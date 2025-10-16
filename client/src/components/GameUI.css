@@ -524,6 +524,20 @@
 
 /* --- Responsividade Mobile --- */
 
+/* Ocultar progresso mobile no desktop */
+.mission-progress-mobile {
+  display: none;
+}
+
+/* Versões desktop/mobile do contador de ouro */
+.gold-mobile {
+  display: none;
+}
+
+.gold-desktop {
+  display: inline;
+}
+
 /* Tablets e Mobile Landscape */
 @media (max-width: 1024px) {
   .hud-widget {
@@ -649,6 +663,17 @@
     display: none; /* Oculta texto da missão no mobile */
   }
 
+  /* Progresso minimalista da missão - apenas mobile */
+  .mission-progress-mobile {
+    display: block;
+    font-size: 12px;
+    font-weight: bold;
+    color: #FFD700;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    white-space: nowrap;
+    line-height: 1.2;
+  }
+
   .stats-row {
     gap: 8px;
     justify-content: flex-end; /* Alinha kills/gold à direita */
@@ -659,6 +684,15 @@
     font-size: 12px;
     line-height: 1;
     white-space: nowrap;
+  }
+
+  /* Ocultar versão desktop do ouro, mostrar versão mobile */
+  .gold-desktop {
+    display: none;
+  }
+
+  .gold-mobile {
+    display: inline;
   }
 
   /* Controles de câmera - Mobile: acima do joystick */
@@ -785,6 +819,17 @@
     display: none; /* Oculta texto da missão no mobile pequeno */
   }
 
+  /* Progresso minimalista da missão - mobile pequeno */
+  .mission-progress-mobile {
+    display: block;
+    font-size: 11px;
+    font-weight: bold;
+    color: #FFD700;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    white-space: nowrap;
+    line-height: 1.1;
+  }
+
   .stats-row {
     gap: 6px;
     justify-content: flex-end; /* Alinha kills/gold à direita */
@@ -794,6 +839,15 @@
     font-size: 11px;
     line-height: 1;
     white-space: nowrap;
+  }
+
+  /* Ocultar versão desktop do ouro, mostrar versão mobile */
+  .gold-desktop {
+    display: none;
+  }
+
+  .gold-mobile {
+    display: inline;
   }
 
   /* Controles de câmera - Mobile pequeno: acima do joystick */
