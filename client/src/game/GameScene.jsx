@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Sky } from '@react-three/drei';
 import Ground from './entities/Ground';
@@ -10,6 +10,7 @@ import Cemetery from './entities/Cemetery';
 import Playground from './entities/Playground';
 import FoodCourt from './entities/FoodCourt';
 import Player from './entities/Player';
+import PlayerLite from './entities/PlayerLite';
 import FriendlyNPC from './entities/FriendlyNPC';
 import friendlyNpcData from './data/friendlyNpcData';
 import Zombie from './entities/Zombie';
@@ -343,15 +344,13 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
       }
     });
 
-    // Coleta de cocos por proximidade
     coconuts.forEach(coco => {
-      // Safety check para garantir que o coco tem posição válida
       if (typeof coco.x === 'undefined' || typeof coco.z === 'undefined') return;
       
       const cocoPos = new THREE.Vector3(coco.x, coco.y, coco.z);
       const distance = playerPos.distanceTo(cocoPos);
       
-      if (distance < 1.5) { // Raio de coleta
+      if (distance < 1.5) {
         socketService.emit('collect_coconut', { coconutId: coco.id });
       }
     });
@@ -401,58 +400,46 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
     if (onStonePromptsChange) onStonePromptsChange({ showStonePrompt, showOracleDeliveryPrompt: false, hasStoneInInventory: false });
   });
 
-  const playerPositions = players.map(p => p.position).filter(Boolean);
-
   return (
     <>
       <ambientLight intensity={0.8} />
       <directionalLight
         ref={directionalLightRef}
-        position={[10, 50, 10]}
-        intensity={2.0}
+        position={[10, 20, 10]}
+        intensity={1.5}
         castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
         shadow-camera-near={0.5}
-        shadow-camera-far={100}
-        shadow-camera-left={-50}
-        shadow-camera-right={50}
-        shadow-camera-top={50}
-        shadow-camera-bottom={-50}
-        shadow-bias={-0.00005}
-        shadow-normalBias={0.02}
+        shadow-camera-far={50}
+        shadow-camera-left={-30}
+        shadow-camera-right={30}
+        shadow-camera-top={30}
+        shadow-camera-bottom={-30}
+        shadow-bias={-0.0005}
       />
       <Sky sunPosition={[100, 20, 100]} turbidity={8} rayleigh={2} mieCoefficient={0.005} mieDirectionalG={0.8} />
       <Ground />
       <MapBoundary />
       <Mansion />
-      {/* Cemitério no canto superior direito */}
       <Cemetery />
-
-      {/* Parquinho no canto superior esquerdo */}
       <Playground />
-
-      {/* Praça de Alimentação no canto inferior esquerdo */}
       <FoodCourt />
 
-      {/* Tio Uncle */}
       <TioUncle 
         position={[tioUnclePosition.x, tioUnclePosition.y, tioUnclePosition.z]} 
         playerPosition={localPlayerRef.current?.position ? [localPlayerRef.current.position.x, localPlayerRef.current.position.y, localPlayerRef.current.position.z] : [0, 0, 0]} 
       />
 
-      {/* Oráculo */}
       <Oracle
         playerPosition={localPlayerRef.current?.position ? [localPlayerRef.current.position.x, localPlayerRef.current.position.y, localPlayerRef.current.position.z] : [0, 0, 0]}
         preciousStoneActive={preciousStones.length > 0}
       />
 
-      {/* Pedras Preciosas */}
       {preciousStones.map(stone => (
         <PreciousStone key={stone.id} position={[stone.x, stone.y, stone.z]} />
       ))}
 
-      {/* NPCs Amigáveis */}
       {friendlyNpcData.map(npc => (
         <FriendlyNPC 
           key={npc.id} 
@@ -461,7 +448,6 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
         />
       ))}
 
-      {/* NPCs Estáticos */}
       <TiaRose 
         playerPosition={localPlayerRef.current?.position ? [localPlayerRef.current.position.x, localPlayerRef.current.position.y, localPlayerRef.current.position.z] : [0, 0, 0]}
       />
@@ -489,26 +475,23 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
           }
         }}
       />
-      {players.filter(p => p.id !== playerId).map((player) => {
-        return (
-          <Player
-            key={player.id}
-            character={player.stats || player.character}
-            position={[player.position?.x || 0, player.position?.y || 0.5, player.position?.z || 0]}
-            isLocalPlayer={false}
-          />
-        );
-      })}
+      {players.filter(p => p.id !== playerId).map((player) => (
+        <PlayerLite
+          key={player.id}
+          player={player}
+        />
+      ))}
+
       {enemies.map((enemy) => {
         if (enemy.health > 0) {
           if (enemy.type === 'zombie') {
-            return <Zombie key={enemy.id} id={enemy.id} position={enemy.position} health={enemy.health} maxHealth={enemy.maxHealth} />;
+            return <Zombie key={enemy.id} position={enemy.position} health={enemy.health} maxHealth={enemy.maxHealth} />;
           }
           if (enemy.type === 'ghost') {
-            return <Ghost key={enemy.id} id={enemy.id} position={enemy.position} health={enemy.health} maxHealth={enemy.maxHealth} />;
+            return <Ghost key={enemy.id} position={enemy.position} health={enemy.health} maxHealth={enemy.maxHealth} />;
           }
           if (enemy.type === 'slime') {
-            return <Slime key={enemy.id} id={enemy.id} position={enemy.position} health={enemy.health} maxHealth={enemy.maxHealth} />;
+            return <Slime key={enemy.id} position={enemy.position} health={enemy.health} maxHealth={enemy.maxHealth} />;
           }
           if (enemy.type === 'coconaro') {
             return <Coconaro key={enemy.id} id={enemy.id} position={enemy.position} health={enemy.health} maxHealth={enemy.maxHealth} />;
@@ -519,7 +502,6 @@ function GameScene({ character, onKillCountChange, isDead, onAbilityStateChange,
         return null;
       })}
 
-      {/* Cocos Colecionáveis */}
       {coconuts.map(coco => (
         <Coco key={coco.id} id={coco.id} position={[coco.x, coco.y, coco.z]} />
       ))}

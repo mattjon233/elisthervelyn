@@ -1,20 +1,28 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, lazy, Suspense, memo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import GameScene from '../game/GameScene';
-import GameUI from './GameUI';
-import MissionUI from './MissionUI';
-import ShopUI from './ShopUI';
-import GameOverScreen from './GameOverScreen';
-import DamageOverlay from './DamageOverlay';
-import HealEffect from './HealEffect';
-import IntroCinematic from './IntroCinematic';
-import MissionChoiceUI from './MissionChoiceUI';
-import FinalCutscene from './FinalCutscene';
-import Credits from './Credits';
 import { useGameStore } from '../store/gameStore';
 import { usePrevious } from '../game/hooks/usePrevious';
 import socketService from '../services/socket';
 import './Game.css';
+
+// Lazy load components
+const IntroCinematic = lazy(() => import('./IntroCinematic'));
+const FinalCutscene = lazy(() => import('./FinalCutscene'));
+const Credits = lazy(() => import('./Credits'));
+const DamageOverlay = lazy(() => import('./DamageOverlay'));
+const HealEffect = lazy(() => import('./HealEffect'));
+const GameUI = lazy(() => import('./GameUI'));
+const MissionUI = lazy(() => import('./MissionUI'));
+const ShopUI = lazy(() => import('./ShopUI'));
+const GameOverScreen = lazy(() => import('./GameOverScreen'));
+const MissionChoiceUI = lazy(() => import('./MissionChoiceUI'));
+
+// Memoized components
+const MemoizedDamageOverlay = memo(DamageOverlay);
+const MemoizedHealEffect = memo(HealEffect);
+const MemoizedGameUI = memo(GameUI);
+const MemoizedMissionUI = memo(MissionUI);
 
 function Game({ roomData }) {
   const [killCount, setKillCount] = useState(0);
@@ -27,33 +35,25 @@ function Game({ roomData }) {
   const { 
     players, playerId, isDead, lastDamageTime, lastHealTime, 
     isCinematicOpen, setIsCinematicOpen, setDead,
-    showMissionChoice, setIsAnyCinematicActive // Import new setter
+    showMissionChoice, setIsAnyCinematicActive
   } = useGameStore();
 
   const localPlayer = players.find(p => p.id === playerId);
   const prevPlayerState = usePrevious(localPlayer);
 
-  // Rastrear mudanças de HP para calcular cura
   useEffect(() => {
     if (!localPlayer || !prevPlayerState) return;
-
     const healthDiff = localPlayer.health - prevPlayerState.health;
-
-    // Se ganhou HP, atualizar quantidade de cura
     if (healthDiff > 0) {
       setHealAmount(healthDiff);
     }
   }, [localPlayer, prevPlayerState]);
 
-  // Efeito para detectar morte e respawn
   useEffect(() => {
     if (!localPlayer) return;
-
-    // Jogador morreu nesta atualização?
     if (localPlayer.health <= 0 && (prevPlayerState?.health > 0 || !isDead)) {
       setDead(true);
     }
-    // Jogador renasceu nesta atualização?
     if (localPlayer.health > 0 && isDead) {
       setDead(false);
     }
@@ -61,19 +61,18 @@ function Game({ roomData }) {
 
   const handleCinematicComplete = useCallback(() => {
     setIsCinematicOpen(false);
-    setIsAnyCinematicActive(false); // Set to false when intro cinematic completes
+    setIsAnyCinematicActive(false);
   }, [setIsCinematicOpen, setIsAnyCinematicActive]);
 
-  // Listener para o final do jogo
   useEffect(() => {
     const handleFinalCutscene = () => {
       setShowFinalCutscene(true);
-      setIsAnyCinematicActive(true); // Set to true when final cutscene starts
+      setIsAnyCinematicActive(true);
     };
     const handleShowCredits = () => {
-      setShowFinalCutscene(false); // Garante que a cutscene saia
+      setShowFinalCutscene(false);
       setShowCredits(true);
-      setIsAnyCinematicActive(true); // Set to true when credits start
+      setIsAnyCinematicActive(true);
     };
 
     socketService.on('final_cutscene_start', handleFinalCutscene);
@@ -83,33 +82,27 @@ function Game({ roomData }) {
       socketService.off('final_cutscene_start', handleFinalCutscene);
       socketService.off('show_credits', handleShowCredits);
     };
-  }, [setIsAnyCinematicActive]); // Add setIsAnyCinematicActive to dependencies
+  }, [setIsAnyCinematicActive]);
 
   return (
     <div className="game-container">
-      {/* Cinematográfica de Introdução */}
-      {isCinematicOpen && (
-        <IntroCinematic onComplete={handleCinematicComplete} />
-      )}
+      <Suspense fallback={<div>Loading...</div>}>
+        {isCinematicOpen && <IntroCinematic onComplete={handleCinematicComplete} />}
+        {showFinalCutscene && (
+          <FinalCutscene 
+            dialogueKey="coconaro_derrotado"
+            onComplete={() => {
+              setShowFinalCutscene(false);
+              setIsAnyCinematicActive(false);
+            }}
+          />
+        )}
+        {showCredits && <Credits onComplete={() => {
+          setShowCredits(false);
+          setIsAnyCinematicActive(false);
+        }} />}
+      </Suspense>
 
-      {/* Cutscene Final */}
-      {showFinalCutscene && (
-        <FinalCutscene 
-          dialogueKey="coconaro_derrotado" // Pass the dialogueKey
-          onComplete={() => {
-            setShowFinalCutscene(false);
-            setIsAnyCinematicActive(false); // Set to false when final cutscene completes
-          }}
-        />
-      )}
-
-      {/* Créditos */}
-      {showCredits && <Credits onComplete={() => { // Assuming Credits component has onComplete
-        setShowCredits(false);
-        setIsAnyCinematicActive(false); // Set to false when credits complete
-      }} />}
-
-      {/* Cena 3D */}
       <Canvas
         camera={{ position: [0, 10, 15], fov: 60 }}
         shadows
@@ -124,36 +117,21 @@ function Game({ roomData }) {
         />
       </Canvas>
 
-      {/* Efeito de dano (tela vermelha) */}
-      <DamageOverlay lastDamage={lastDamageTime} />
-
-      {/* Efeito de cura (partículas verdes) */}
-      <HealEffect lastHeal={lastHealTime} amount={healAmount} />
-
-      {/* UI 2D sobreposta */}
-      <GameUI
-        character={roomData?.character}
-        killCount={killCount}
-        abilityState={abilityState}
-        invulnerabilityState={invulnerabilityState}
-        stonePrompts={stonePrompts}
-      />
-
-      {/* UI de Missões */}
-      <MissionUI />
-
-      {/* UI da Loja */}
-      <ShopUI />
-
-      {/* Tela de Game Over */}
-      {isDead && (
-        <GameOverScreen
+      <Suspense fallback={null}>
+        <MemoizedDamageOverlay lastDamage={lastDamageTime} />
+        <MemoizedHealEffect lastHeal={lastHealTime} amount={healAmount} />
+        <MemoizedGameUI
+          character={roomData?.character}
           killCount={killCount}
+          abilityState={abilityState}
+          invulnerabilityState={invulnerabilityState}
+          stonePrompts={stonePrompts}
         />
-      )}
-
-      {/* UI de Escolha de Missão */}
-      {showMissionChoice && <MissionChoiceUI />}
+        <MemoizedMissionUI />
+        <ShopUI />
+        {isDead && <GameOverScreen killCount={killCount} />}
+        {showMissionChoice && <MissionChoiceUI />}
+      </Suspense>
     </div>
   );
 }
